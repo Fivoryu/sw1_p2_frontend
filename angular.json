@@ -83,13 +83,7 @@
               "buildTarget": "frontend:build:development"
             }
           },
-          "defaultConfiguration": "development",
-          "options": {
-            "watchOptions": {
-              "poll": 2000,
-              "ignored": ["**/node_modules/**"]
-            }
-          }
+          "defaultConfiguration": "development"
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n"
