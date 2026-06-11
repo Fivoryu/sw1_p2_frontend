@@ -1,0 +1,72 @@
+<button type="button" class="ai-fab" (click)="toggle()" [class.has-suggestion]="hasProactiveSuggestion()">
+  <span class="ai-fab__icon">✨</span>
+  <span class="ai-badge" *ngIf="!open() && suggestionCount()">{{ suggestionCount() }}</span>
+</button>
+
+<div class="ai-panel" *ngIf="open()">
+  <header class="ai-panel__header">
+    <div class="ai-panel__title">
+      <span class="ai-panel__icon">✨</span>
+      <span>Asistente IA</span>
+    </div>
+    <div class="ai-panel__actions">
+      <button type="button" class="ai-panel__action" (click)="clearChat()" title="Limpiar chat">🗑</button>
+      <button type="button" class="ai-panel__close" (click)="toggle()" aria-label="Cerrar asistente">×</button>
+    </div>
+  </header>
+
+  <div class="ai-messages">
+    <div class="ai-messages__list">
+      <div
+        class="ai-msg"
+        *ngFor="let msg of messages()"
+        [class.ai-msg--user]="msg.role === 'user'"
+        [class.ai-msg--assistant]="msg.role === 'assistant'"
+      >
+        <div class="ai-msg__bubble">
+          <p class="ai-msg__text">{{ msg.text }}</p>
+          <div class="ai-msg__actions" *ngIf="msg.redirect_url && msg.redirect_label">
+            <button type="button" class="ai-btn ai-btn--navigate" (click)="navigateTo(msg.redirect_url!)">
+              {{ msg.redirect_label }}
+            </button>
+          </div>
+          <div class="ai-msg__suggestions" *ngIf="msg.suggestions?.length">
+            <button
+              type="button"
+              class="ai-chip"
+              *ngFor="let sug of msg.suggestions"
+              (click)="sendSuggestion(sug)"
+            >
+              {{ sug }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-msg ai-msg--assistant" *ngIf="loading()">
+        <div class="ai-msg__bubble">
+          <div class="ai-typing">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="ai-input">
+    <button type="button" class="ai-input__mic" (click)="startVoiceInput()" [disabled]="loading()" title="Entrada de voz">
+      🎤
+    </button>
+    <input
+      class="ai-input__field"
+      [ngModel]="draft()"
+      (ngModelChange)="draft.set($event)"
+      (keydown.enter)="send()"
+      placeholder="Escribí tu consulta..."
+      [disabled]="loading()"
+    />
+    <button type="button" class="ai-input__send" (click)="send()" [disabled]="loading() || !draft()">
+      ➤
+    </button>
+  </footer>
+</div>

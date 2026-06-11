@@ -1,0 +1,42 @@
+<div class="doc-preview" [class.doc-preview--compact]="compact()">
+  <p class="doc-preview__loading" *ngIf="loading()">Cargando vista previa...</p>
+  <p class="doc-preview__error" *ngIf="error()">{{ error() }}</p>
+
+  <ng-container *ngIf="!loading() && !error()">
+    <iframe
+      *ngIf="mode() === 'pdf'"
+      class="doc-preview__frame"
+      [src]="resourceUrl()"
+      [title]="resolvedFileName()"
+    ></iframe>
+
+    <img
+      *ngIf="mode() === 'image'"
+      class="doc-preview__image"
+      [src]="resourceUrl()"
+      [alt]="resolvedFileName()"
+    />
+
+    <video *ngIf="mode() === 'video'" class="doc-preview__media" [src]="resourceUrl()" controls></video>
+    <audio *ngIf="mode() === 'audio'" class="doc-preview__audio" [src]="resourceUrl()" controls></audio>
+
+    <div
+      *ngIf="mode() === 'text' && richHtmlContent()"
+      class="doc-preview__rich"
+      [innerHTML]="richHtmlContent()"
+    ></div>
+    <pre *ngIf="mode() === 'text' && !richHtmlContent()" class="doc-preview__text">{{ textContent() }}</pre>
+    <p class="doc-preview__hint" *ngIf="mode() === 'text' && textTruncated()">
+      Vista previa truncada. Descarga el archivo para ver el contenido completo.
+    </p>
+
+    <ng-container *ngIf="mode() === 'iframe'">
+      <iframe class="doc-preview__frame" [src]="resourceUrl()" [title]="resolvedFileName()"></iframe>
+      <div class="doc-preview__fallback">
+        <strong>{{ mimeTypeLabel(resolvedMimeType()) }}</strong>
+        <p>Si no ves el contenido embebido, abre el archivo en una pestaña nueva o descárgalo.</p>
+        <button type="button" (click)="openInNewTab()">Abrir en pestaña nueva</button>
+      </div>
+    </ng-container>
+  </ng-container>
+</div>

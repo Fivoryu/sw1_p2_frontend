@@ -1,0 +1,41 @@
+<section class="repo-page">
+  <header class="repo-page__topbar panel">
+    <a class="ghost back-link" [routerLink]="backLink()">← {{ backLabel() }}</a>
+    <div class="repo-page__crumb">
+      <span>Repositorio</span>
+      <span class="muted">/</span>
+      <strong>{{ repositoryCode() }}</strong>
+    </div>
+  </header>
+
+  <p class="error" *ngIf="workflowService.createError()">{{ workflowService.createError() }}</p>
+  <p class="badge" *ngIf="workflowService.successNotice()">{{ workflowService.successNotice() }}</p>
+
+  <app-document-repository-panel
+    *ngIf="workflowService.canReadDocuments()"
+    [repositoryCode]="repositoryCode()"
+    [activityName]="activityName()"
+    [documents]="mode() === 'task' ? selectedTaskDocuments() : selectedInstanceDocuments()"
+    [tramiteDocuments]="mode() === 'task' ? selectedInstanceDocuments() : null"
+    [versionsByDocument]="documentVersions()"
+    [commentsByDocument]="documentComments()"
+    [canWrite]="workflowService.canWriteDocuments()"
+    [canSign]="workflowService.canSignDocuments()"
+    [canValidateSignature]="workflowService.canValidateDocumentSignatures()"
+    [canAdminDocuments]="workflowService.canAdminDocuments()"
+    [uploading]="workflowService.uploadingDocument()"
+    (uploadDocument)="onUploadDocument($event)"
+    (uploadVersion)="onUploadVersion($event)"
+    (downloadDocument)="downloadDocument($event.documentId, $event.name)"
+    (loadVersions)="workflowService.loadDocumentVersions($event)"
+    (loadAllVersions)="workflowService.loadDocumentVersionsForAll($event)"
+    (openPreview)="onOpenPreview($event)"
+    (openVersion)="openVersion($event)"
+    (signVersion)="signVersion($event)"
+    (validateVersion)="validateVersion($event)"
+    (loadComments)="loadComments($event)"
+    (addComment)="addComment($event)"
+    (openEditor)="onOpenEditor($event)"
+    (realtimeDocumentEvent)="handleRealtimeDocumentEvent($event)"
+  />
+</section>

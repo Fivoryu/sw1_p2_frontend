@@ -1,0 +1,112 @@
+<section class="editor-page" [class.editor-page--history-open]="showHistory()">
+  <header class="editor-page__topbar panel">
+    <button type="button" class="ghost back-link" (click)="goBack()">← Volver</button>
+    <div class="editor-page__topbar-center">
+      <span class="doc-presence" *ngIf="collabService.presenceUsers().length">
+        <span class="doc-presence__status" [class.is-online]="collabService.isConnected()"></span>
+        <span class="doc-presence__avatar" *ngFor="let user of collabService.presenceUsers()" [title]="user.user_name">
+          {{ user.user_name.slice(0, 1).toUpperCase() }}
+        </span>
+        <strong>{{ collabService.presenceUsers().length }}</strong> viendo
+      </span>
+      <span class="editor-page__editing-indicator" *ngIf="collabService.editingUsers().length">
+        <span class="editing-dot"></span>
+        {{ editingUserNames() }} {{ collabService.editingUsers().length === 1 ? 'está' : 'están' }} editando
+      </span>
+    </div>
+    <div class="editor-page__topbar-actions">
+      <span class="editor-page__save-status" [class]="'editor-page__save-status--' + saveStatus()">
+        {{ saveStatusLabel() }}
+      </span>
+      <span class="editor-page__lang-badge">{{ editorModeLabel() }}</span>
+      <button type="button" class="ghost" (click)="toggleHistory()" [class.is-active]="showHistory()">
+        Historial
+      </button>
+      <button type="button" class="ghost" (click)="reloadContent()" [disabled]="saving()">Recargar</button>
+      <button type="button" class="primary" (click)="save()" [disabled]="saving() || isClean()">
+        {{ saving() ? 'Guardando...' : 'Guardar (Ctrl+S)' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="editor-page__head panel" *ngIf="!loading()">
+    <div class="editor-page__meta">
+      <span class="editor-page__version">v{{ versionNumber() }}</span>
+      <span class="editor-page__type">{{ mimeType() }}</span>
+    </div>
+  </section>
+
+  <div class="editor-page__conflict panel" *ngIf="saveStatus() === 'conflict'">
+    <p>{{ errorMessage() }}</p>
+    <button type="button" (click)="reloadContent()">Recargar versión más reciente</button>
+  </div>
+
+  <section class="editor-page__not-editable panel" *ngIf="notEditable() && !loading()">
+    <h2>Documento no editable</h2>
+    <p>Este tipo de archivo no se puede editar en línea. Descargalo o subilo como nueva versión.</p>
+    <button type="button" (click)="goBack()">Volver a la vista previa</button>
+  </section>
+
+  <section class="editor-page__error panel" *ngIf="errorMessage() && saveStatus() !== 'conflict' && !loading()">
+    <p>{{ errorMessage() }}</p>
+  </section>
+
+  <div class="editor-page__content" *ngIf="!notEditable()">
+    <section class="editor-page__editor panel" [class.editor-page__editor--loading]="loading()">
+      <p class="editor-page__loading" *ngIf="loading()">Cargando documento...</p>
+      <app-rich-text-editor
+        *ngIf="isRichTextMode()"
+        class="editor-page__rich-text"
+        [class.editor-page__rich-text--hidden]="loading()"
+        [value]="content()"
+        (valueChange)="onRichTextChange($event)"
+      />
+      <div
+        *ngIf="!isRichTextMode()"
+        class="editor-page__codemirror"
+        [class.editor-page__codemirror--hidden]="loading()"
+        #editorContainer
+      ></div>
+    </section>
+
+    <aside class="editor-page__history-sidebar" *ngIf="showHistory()">
+      <div class="history-sidebar__head">
+        <strong>Historial de versiones</strong>
+        <button type="button" class="ghost" (click)="toggleHistory()">×</button>
+      </div>
+
+      <div class="history-sidebar__loading" *ngIf="loadingVersions()">Cargando versiones...</div>
+
+      <div class="history-sidebar__empty" *ngIf="!loadingVersions() && !versions().length">
+        Sin versiones registradas.
+      </div>
+
+      <div class="history-sidebar__list" *ngIf="!loadingVersions() && versions().length">
+        <article
+          class="history-item"
+          *ngFor="let version of versions()"
+          [class.history-item--current]="version.version_number === versionNumber()"
+        >
+          <div class="history-item__head">
+            <span class="history-item__version">v{{ version.version_number }}</span>
+            <span class="history-item__change-type">{{ changeTypeLabel(version.change_type) }}</span>
+          </div>
+          <p class="history-item__meta">
+            {{ version.uploaded_by_name }} · {{ version.created_at | date:'dd/MM/yy HH:mm' }}
+          </p>
+          <p class="history-item__comment" *ngIf="version.comment">{{ version.comment }}</p>
+          <p class="history-item__size">{{ formatFileSize(version.size_bytes) }} · {{ version.file_name }}</p>
+          <button
+            type="button"
+            class="ghost history-item__revert"
+            *ngIf="version.version_number !== versionNumber()"
+            (click)="revertToVersion(version)"
+          >
+            Revertir a esta versión
+          </button>
+          <span class="history-item__current-badge" *ngIf="version.version_number === versionNumber()">Actual</span>
+        </article>
+      </div>
+    </aside>
+  </div>
+</section>

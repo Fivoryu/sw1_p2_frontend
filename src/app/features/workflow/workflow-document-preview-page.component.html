@@ -1,0 +1,33 @@
+<section class="preview-page">
+  <header class="preview-page__topbar panel">
+    <button type="button" class="ghost back-link" (click)="goBack()">← Volver al repositorio</button>
+    <div class="preview-page__actions">
+      <button type="button" class="ghost" (click)="editDocument()" *ngIf="isEditableText()">Editar</button>
+      <button type="button" class="ghost" (click)="downloadDocument()" [disabled]="!documentMeta()">Descargar</button>
+    </div>
+  </header>
+
+  <section class="preview-page__head panel" *ngIf="documentMeta() as document">
+    <div>
+      <h1>{{ title() }}</h1>
+      <p class="preview-page__subtitle">{{ subtitle() }}</p>
+      <p class="preview-page__meta">
+        <span>v{{ document.version }}</span>
+        <span>{{ mimeTypeLabel(document.mimeType) }}</span>
+        <span>{{ formatFileSize(document.sizeBytes) }}</span>
+        <span>{{ scopeLabel(document.scope) }}</span>
+      </p>
+      <p class="preview-page__comment" *ngIf="document.comment">{{ document.comment }}</p>
+    </div>
+  </section>
+
+  <section class="preview-page__body panel">
+    <app-document-preview-view
+      *ngIf="documentMeta() as document"
+      [documentId]="document.id"
+      [fileName]="document.fileName || document.name"
+      [mimeType]="document.mimeType"
+    />
+    <p *ngIf="!documentMeta()">Cargando documento...</p>
+  </section>
+</section>

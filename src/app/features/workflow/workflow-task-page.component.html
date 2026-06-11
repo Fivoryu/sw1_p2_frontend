@@ -1,0 +1,272 @@
+<section class="task-page">
+  <header class="task-topbar panel">
+    <a class="back-link ghost" routerLink="/workflow/bandeja">← Bandeja</a>
+    <div class="task-topbar-meta" *ngIf="task() as task">
+      <span class="process-code">{{ task.processCode }}</span>
+      <span class="muted">·</span>
+      <span>{{ task.policyName }}</span>
+    </div>
+  </header>
+
+  <p class="error" *ngIf="workflowService.createError()">{{ workflowService.createError() }}</p>
+  <p class="badge" *ngIf="workflowService.successNotice()">{{ workflowService.successNotice() }}</p>
+
+  <ng-container *ngIf="task() as task; else missingTask">
+    <article class="task-activity-bar panel">
+      <div class="task-activity-bar__main">
+        <div class="task-activity-bar__title">
+          <span class="eyebrow">Actividad en curso</span>
+          <div class="task-activity-bar__heading">
+            <h1>{{ task.taskName }}</h1>
+            <div class="context-badges">
+              <span [class]="badgeClass(task.priority)">{{ task.priority | titlecase }}</span>
+              <span [class]="statusBadgeClass(task.status)">{{ statusLabel(task.status) }}</span>
+            </div>
+          </div>
+          <p>{{ task.summary }}</p>
+        </div>
+
+        <a
+          *ngIf="canComplete() && workflowService.canReadDocuments()"
+          class="task-repo-link"
+          [routerLink]="['/workflow/bandeja', task.id, 'repositorio']"
+        >
+          📁 Repositorio documental
+        </a>
+      </div>
+
+      <dl class="task-activity-bar__meta">
+        <div><dt>Trámite</dt><dd>{{ task.processCode }}</dd></div>
+        <div><dt>Solicitante</dt><dd>{{ task.requesterName }}</dd></div>
+        <div><dt>Departamento</dt><dd>{{ task.departmentName }}</dd></div>
+        <div><dt>Asignación</dt><dd>{{ task.assignedUserName || 'Sin asignar' }}</dd></div>
+        <div class="task-activity-bar__meta-wide"><dt>Siguiente paso</dt><dd>{{ task.nextAction }}</dd></div>
+      </dl>
+
+      <ul class="task-activity-bar__checklist" *ngIf="task.checklist.length">
+        <li *ngFor="let item of task.checklist">{{ item }}</li>
+      </ul>
+    </article>
+
+    <main class="task-workspace panel">
+      <section class="workspace-block workspace-block--claim" *ngIf="canClaim()">
+        <h2>Reclamar actividad</h2>
+        <p class="muted">Esta tarea está en el pool del departamento. Debes reclamarla antes de completar el formulario.</p>
+        <button type="button" (click)="claimTask()" [disabled]="workflowService.claimingTaskId() === task.id">
+          {{ workflowService.claimingTaskId() === task.id ? 'Reclamando...' : 'Reclamar tarea' }}
+        </button>
+      </section>
+
+      <section class="workspace-block workspace-block--blocked" *ngIf="isAssignedToOther()">
+        <h2>Actividad bloqueada</h2>
+        <p class="muted">
+          La tarea está asignada a {{ task.assignedUserName }}.
+          Solo esa persona puede completarla. Si eres tú, cierra sesión e ingresa de nuevo con
+          <strong>funcionario&#64;example.com</strong>.
+        </p>
+      </section>
+
+      <section class="workspace-block" *ngIf="canComplete() && selectedTaskForm() as form">
+        <header class="workspace-head">
+          <div>
+            <span class="eyebrow">Formulario de la actividad</span>
+            <h2>{{ form.name }}</h2>
+            <p class="muted">{{ form.description || 'Completa los campos para derivar el trámite al siguiente paso.' }}</p>
+          </div>
+        </header>
+
+        <div class="panel" *ngIf="authService.canUseAi()">
+          <label>
+            Texto para prellenado asistido
+            <textarea [ngModel]="aiDraft()" (ngModelChange)="aiDraft.set($event)" rows="3" placeholder="Pega aquí la solicitud o descripción"></textarea>
+          </label>
+          <div class="ai-actions">
+            <button type="button" (click)="suggestWithAi()" [disabled]="aiLoading() || aiAudioLoading()">
+              {{ aiLoading() ? 'Sugiriendo...' : 'Prellenar con IA' }}
+            </button>
+            <button type="button" class="ghost" (click)="toggleAiRecording()" [disabled]="aiAudioLoading()">
+              {{ aiRecording() ? 'Detener audio' : (aiAudioLoading() ? 'Transcribiendo...' : 'Dictar formulario') }}
+            </button>
+          </div>
+          <div class="ai-transcript" *ngIf="aiRecording() || aiTranscribedText()">
+            <span class="ai-dot" [class.is-recording]="aiRecording()"></span>
+            <strong>{{ aiRecording() ? 'Grabando solicitud...' : 'Audio transcrito' }}</strong>
+            <p *ngIf="aiTranscribedText()">{{ aiTranscribedText() }}</p>
+            <small *ngIf="aiTranscribedText()">Revisa y corrige los campos sugeridos antes de completar la actividad.</small>
+          </div>
+        </div>
+
+        <div class="task-form">
+          <div class="field-block" *ngFor="let field of form.fields; trackBy: trackField">
+            <div class="field-label">
+              <span>{{ fieldDisplayLabel(field) }}</span>
+              <small *ngIf="field.required">*</small>
+            </div>
+
+            <textarea
+              *ngIf="field.type === 'textarea'"
+              [rows]="field.validation.rows || 4"
+              [placeholder]="field.placeholder || ''"
+              [ngModel]="fieldValue(field.name) ?? ''"
+              (ngModelChange)="updateFieldValue(field.name, $event)"
+            ></textarea>
+
+            <select
+              *ngIf="field.type === 'select'"
+              [ngModel]="fieldStringValue(field.name)"
+              (ngModelChange)="updateFieldValue(field.name, $event)"
+              [attr.aria-label]="fieldDisplayLabel(field)"
+            >
+              <option value="" disabled hidden>Selecciona una opción</option>
+              <option *ngFor="let option of fieldSelectOptions(field); trackBy: trackOption" [value]="option">{{ option }}</option>
+            </select>
+            <small class="field-help field-help--warning" *ngIf="field.type === 'select' && !fieldSelectOptions(field).length">
+              Este campo no tiene opciones configuradas en la política.
+            </small>
+
+            <div class="radio-group" *ngIf="field.type === 'radio'">
+              <label class="radio-option" *ngFor="let option of fieldSelectOptions(field)">
+                <input
+                  type="radio"
+                  [name]="field.id"
+                  [value]="option"
+                  [checked]="fieldValue(field.name) === option"
+                  (change)="updateFieldValue(field.name, option)"
+                />
+                <span>{{ option }}</span>
+              </label>
+            </div>
+            <small class="field-help field-help--warning" *ngIf="field.type === 'radio' && !fieldSelectOptions(field).length">
+              Este campo no tiene opciones configuradas en la política.
+            </small>
+
+            <label class="checkbox-inline" *ngIf="field.type === 'checkbox'">
+              <input
+                type="checkbox"
+                [checked]="fieldValue(field.name) === true"
+                (change)="updateFieldValue(field.name, $any($event.target).checked)"
+              />
+              <span>Confirmar</span>
+            </label>
+
+            <input
+              *ngIf="field.type !== 'textarea' && field.type !== 'select' && field.type !== 'radio' && field.type !== 'checkbox'"
+              [type]="field.type === 'file' ? 'text' : inputType(field.type)"
+              [placeholder]="field.type === 'file' ? 'Referencia del archivo' : (field.placeholder || '')"
+              [ngModel]="fieldValue(field.name) ?? ''"
+              (ngModelChange)="updateFieldValue(field.name, $event)"
+            />
+
+            <small class="field-help" *ngIf="field.help_text">{{ field.help_text }}</small>
+          </div>
+        </div>
+
+        <section class="route-recommendation panel" *ngIf="authService.canUseAi()">
+          <div>
+            <span class="eyebrow">Ruta óptima</span>
+            <h3>Recomendación de asignación</h3>
+            <p class="muted">Analiza carga actual, historial y tiempos promedio para sugerir el funcionario más conveniente.</p>
+          </div>
+          <button type="button" class="ghost" (click)="suggestRoute()" [disabled]="routeRecommendationLoading()">
+            {{ routeRecommendationLoading() ? 'Analizando...' : 'Sugerir asignación' }}
+          </button>
+
+          <ng-container *ngIf="routeRecommendation() as recommendation">
+            <p class="route-recommendation__reason">{{ recommendation.reasoning }}</p>
+            <div class="route-candidates">
+              <button
+                type="button"
+                class="route-candidate"
+                *ngFor="let candidate of recommendation.candidates"
+                [class.is-selected]="selectedRecommendedUserId() === candidate.user_id"
+                (click)="selectRecommendedUser(candidate.user_id)"
+              >
+                <strong>{{ candidate.user_name }}</strong>
+                <span>Score {{ candidate.score | number:'1.2-2' }}</span>
+                <small>Carga {{ candidate.current_workload }} · Promedio {{ candidate.avg_resolution_hours }}h · Historial {{ candidate.historical_cases }}</small>
+              </button>
+            </div>
+          </ng-container>
+        </section>
+
+        <section class="reassignment-suggestions panel" *ngIf="authService.canUseAi()">
+          <div>
+            <span class="eyebrow">Reasignaciones IA</span>
+            <h3>Sugerencias de reasignación</h3>
+            <p class="muted">Analiza carga de trabajo y tiempos históricos para sugerir reasignaciones de tareas.</p>
+          </div>
+          <button type="button" class="ghost" (click)="suggestReassignments()" [disabled]="reassignmentLoading()">
+            {{ reassignmentLoading() ? 'Analizando...' : 'Sugerir reasignaciones' }}
+          </button>
+
+          <div class="reassignment-list" *ngIf="reassignmentSuggestions().length">
+            <div class="reassignment-card" *ngFor="let s of reassignmentSuggestions()">
+              <div class="reassignment-card__header">
+                <strong>{{ s.current_user_name }}</strong>
+                <span class="muted">→ {{ s.target_user_name }}</span>
+                <span class="reassignment-card__confidence">{{ (s.confidence * 100) | number:'1.0-0' }}%</span>
+              </div>
+              <small class="muted">
+                Carga actual: {{ s.current_workload }} · Carga destino: {{ s.target_workload }} ·
+                Promedio destino: {{ s.target_avg_hours | number:'1.0-0' }}h
+              </small>
+              <button type="button" class="ghost reassign-btn" (click)="executeReassignment(s)" [disabled]="reassignmentExecuting() === s.task_id">
+                {{ reassignmentExecuting() === s.task_id ? 'Reasignando...' : 'Reasignar' }}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <footer class="workspace-footer">
+          <a class="ghost" routerLink="/workflow/bandeja">Cancelar</a>
+          <button type="button" (click)="completeTask()" [disabled]="workflowService.completingTaskId() === task.id">
+            {{ workflowService.completingTaskId() === task.id ? 'Derivando...' : 'Completar y derivar' }}
+          </button>
+        </footer>
+      </section>
+
+      <section class="workspace-block" *ngIf="canComplete() && !selectedTaskForm() && !workflowService.loadingTaskDetailId()">
+        <h2>Completar actividad</h2>
+        <p class="muted">Esta actividad no requiere formulario. Al completarla se derivará a la siguiente área o se cerrará el trámite si es el último paso.</p>
+        <section class="route-recommendation panel" *ngIf="authService.canUseAi()">
+          <div>
+            <span class="eyebrow">Ruta óptima</span>
+            <h3>Recomendación de asignación</h3>
+            <p class="muted">Analiza carga actual, historial y tiempos promedio para sugerir el funcionario más conveniente.</p>
+          </div>
+          <button type="button" class="ghost" (click)="suggestRoute()" [disabled]="routeRecommendationLoading()">
+            {{ routeRecommendationLoading() ? 'Analizando...' : 'Sugerir asignación' }}
+          </button>
+          <ng-container *ngIf="routeRecommendation() as recommendation">
+            <p class="route-recommendation__reason">{{ recommendation.reasoning }}</p>
+            <div class="route-candidates">
+              <button type="button" class="route-candidate" *ngFor="let candidate of recommendation.candidates" [class.is-selected]="selectedRecommendedUserId() === candidate.user_id" (click)="selectRecommendedUser(candidate.user_id)">
+                <strong>{{ candidate.user_name }}</strong>
+                <span>Score {{ candidate.score | number:'1.2-2' }}</span>
+                <small>Carga {{ candidate.current_workload }} · Promedio {{ candidate.avg_resolution_hours }}h · Historial {{ candidate.historical_cases }}</small>
+              </button>
+            </div>
+          </ng-container>
+        </section>
+        <footer class="workspace-footer">
+          <a class="ghost" routerLink="/workflow/bandeja">Cancelar</a>
+          <button type="button" (click)="completeTask()" [disabled]="workflowService.completingTaskId() === task.id">
+            {{ workflowService.completingTaskId() === task.id ? 'Derivando...' : 'Completar actividad' }}
+          </button>
+        </footer>
+      </section>
+
+      <p class="muted workspace-loading" *ngIf="workflowService.loadingTaskDetailId() === task.id">
+        Cargando formulario de la actividad...
+      </p>
+    </main>
+  </ng-container>
+
+  <ng-template #missingTask>
+    <article class="panel task-empty">
+      <h2>Tarea no encontrada</h2>
+      <p class="muted">La actividad ya no está disponible en tu bandeja.</p>
+      <a routerLink="/workflow/bandeja">Volver a la bandeja</a>
+    </article>
+  </ng-template>
+</section>

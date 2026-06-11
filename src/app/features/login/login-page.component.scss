@@ -1,0 +1,145 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.22), transparent 26%),
+    linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+}
+
+.login-card {
+  width: min(980px, 100%);
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.35);
+}
+
+.login-copy {
+  padding: 3rem;
+  background: linear-gradient(160deg, #0f172a, #172554);
+  color: #eff6ff;
+}
+
+.login-copy h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  line-height: 1;
+  margin: 0.75rem 0 1rem;
+}
+
+.login-copy p {
+  max-width: 32rem;
+  color: #bfdbfe;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 3rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.75rem;
+  color: #7dd3fc;
+}
+
+.error {
+  margin: 0;
+  color: #b91c1c;
+}
+
+.demo-users {
+  width: min(980px, 100%);
+  padding: 1.5rem 0 2rem;
+}
+
+.demo-users h2 {
+  margin: 0 0 0.25rem;
+  color: #eff6ff;
+  font-size: 1.15rem;
+  text-align: center;
+}
+
+.demo-users__hint {
+  margin: 0 0 1rem;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.demo-users__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.55rem;
+}
+
+.demo-user-card {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  text-align: left;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(148, 163, 184, 0.55);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.demo-user-card__name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #f1f5f9;
+}
+
+.demo-user-card__role {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  &.role-administrador { background: rgba(220, 38, 38, 0.25); color: #fca5a5; }
+  &.role-supervisor    { background: rgba(217, 119, 6, 0.25);  color: #fcd34d; }
+  &.role-funcionario   { background: rgba(37, 99, 235, 0.25);  color: #93c5fd; }
+}
+
+.demo-user-card__dept {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+  .login-card {
+    grid-template-columns: 1fr;
+  }
+
+  .login-copy,
+  .login-form {
+    padding: 1.5rem;
+  }
+
+  .demo-users__grid {
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  }
+}

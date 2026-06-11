@@ -1,0 +1,33 @@
+<div
+  class="custom-select"
+  [class.custom-select--open]="open()"
+  [class.custom-select--disabled]="isDisabled()"
+  [class.custom-select--compact]="compact"
+>
+  <button
+    type="button"
+    class="custom-select__trigger"
+    [attr.aria-expanded]="open()"
+    [attr.aria-haspopup]="'listbox'"
+    [attr.aria-label]="ariaLabel"
+    [disabled]="isDisabled()"
+    (click)="toggle()"
+  >
+    <span class="custom-select__value">{{ selectedLabel }}</span>
+    <span class="custom-select__chevron" aria-hidden="true"></span>
+  </button>
+
+  <ul *ngIf="open()" class="custom-select__menu custom-select__menu--overlay" role="listbox" [ngStyle]="menuStyle()">
+    <li
+      *ngFor="let option of options"
+      class="custom-select__option"
+      role="option"
+      [class.custom-select__option--selected]="isSelected(option)"
+      [attr.aria-selected]="isSelected(option)"
+      (mousedown)="$event.preventDefault()"
+      (click)="select(option); $event.stopPropagation()"
+    >
+      {{ option.label }}
+    </li>
+  </ul>
+</div>

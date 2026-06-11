@@ -1,0 +1,274 @@
+<section class="page departments-page">
+  <header class="departments-topbar">
+    <div class="departments-topbar__copy">
+      <span class="eyebrow">Estructura organizacional</span>
+      <h2>Departamentos</h2>
+      <p>Administra las áreas de la organización. Busca por nombre, código o descripción.</p>
+    </div>
+    <div class="departments-topbar__actions">
+      <button type="button" class="ghost departments-topbar__reload" (click)="reload()">
+        <app-ui-icon name="refresh" size="sm" />
+        <span>Recargar</span>
+      </button>
+      <button type="button" class="create-button" [disabled]="!canWrite()" (click)="openCreateModal()">
+        <app-ui-icon name="plus" size="sm" />
+        <span>Nuevo departamento</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="departments-stats" aria-label="Resumen de departamentos">
+    <article class="departments-stat">
+      <span class="departments-stat__icon" aria-hidden="true">
+        <app-ui-icon name="layers" size="lg" />
+      </span>
+      <div>
+        <span class="departments-stat__label">Total</span>
+        <strong>{{ departments().length }}</strong>
+        <small>departamentos registrados</small>
+      </div>
+    </article>
+    <article class="departments-stat departments-stat--info">
+      <span class="departments-stat__icon" aria-hidden="true">
+        <app-ui-icon name="hash" size="lg" />
+      </span>
+      <div>
+        <span class="departments-stat__label">Con código</span>
+        <strong>{{ departmentsWithCode() }}</strong>
+        <small>identificadores únicos</small>
+      </div>
+    </article>
+    <article class="departments-stat departments-stat--accent">
+      <span class="departments-stat__icon" aria-hidden="true">
+        <app-ui-icon name="list" size="lg" />
+      </span>
+      <div>
+        <span class="departments-stat__label">En listado</span>
+        <strong>{{ filteredDepartments().length }}</strong>
+        <small>{{ hasActiveFilters() ? 'coinciden con la búsqueda' : 'visibles ahora' }}</small>
+      </div>
+    </article>
+  </section>
+
+  <div class="departments-layout" [class.departments-layout--full]="!canReadAudit()">
+    <div class="panel list-panel departments-panel">
+      <div class="departments-toolbar">
+        <div class="departments-toolbar__title">
+          <h3>
+            <app-ui-icon name="list" size="sm" />
+            Listado de departamentos
+          </h3>
+          <p>{{ filteredDepartments().length }} resultado(s)</p>
+        </div>
+
+        <div class="departments-toolbar__search">
+          <label class="departments-search">
+            <span class="departments-search__icon" aria-hidden="true">
+              <app-ui-icon name="search" size="sm" />
+            </span>
+            <span class="sr-only">Buscar departamentos</span>
+            <input
+              [value]="searchTerm()"
+              (input)="setSearchTerm($any($event.target).value)"
+              placeholder="Buscar por nombre, código o descripción…"
+              autocomplete="off"
+            />
+          </label>
+          <button
+            type="button"
+            class="ghost departments-toolbar__clear"
+            (click)="clearFilters()"
+            [disabled]="!hasActiveFilters()"
+          >
+            <app-ui-icon name="x" size="sm" />
+            <span>Limpiar</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="error departments-panel__error" *ngIf="error() && !modalOpen()">{{ error() }}</p>
+      <p class="departments-loading" *ngIf="loading()">Cargando departamentos…</p>
+
+      <div class="table-wrapper departments-table-wrap" *ngIf="!loading()">
+        <table class="departments-table">
+          <thead>
+            <tr>
+              <th scope="col">Departamento</th>
+              <th scope="col">Código</th>
+              <th scope="col" class="departments-table__actions-head">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let department of filteredDepartments(); trackBy: trackById">
+              <td>
+                <div class="dept-cell">
+                  <div class="dept-avatar" aria-hidden="true">
+                    <app-ui-icon name="departments" size="lg" />
+                  </div>
+                  <div class="dept-cell__copy">
+                    <strong>{{ department.name }}</strong>
+                    <small>{{ department.description }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="dept-code-badge">
+                  <app-ui-icon name="hash" size="sm" />
+                  {{ department.code }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <div class="dept-actions">
+                  <button
+                    type="button"
+                    class="dept-action-btn"
+                    [attr.aria-label]="'Editar ' + department.name"
+                    title="Editar"
+                    (click)="startEdit(department)"
+                  >
+                    <app-ui-icon name="pencil" size="sm" />
+                    <span class="dept-action-btn__label">Editar</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="dept-action-btn dept-action-btn--danger"
+                    [attr.aria-label]="'Eliminar ' + department.name"
+                    title="Eliminar"
+                    [disabled]="!canWrite()"
+                    (click)="remove(department)"
+                  >
+                    <app-ui-icon name="trash" size="sm" />
+                    <span class="dept-action-btn__label">Eliminar</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="!filteredDepartments().length">
+              <td colspan="3">
+                <div class="departments-empty">
+                  <span class="departments-empty__icon" aria-hidden="true">
+                    <app-ui-icon name="inbox-empty" size="lg" />
+                  </span>
+                  <strong>No hay departamentos que coincidan.</strong>
+                  <small>
+                    {{
+                      hasActiveFilters()
+                        ? 'Prueba otra búsqueda o limpia el filtro.'
+                        : 'Crea el primer departamento con el botón «Nuevo departamento».'
+                    }}
+                  </small>
+                  <button type="button" class="secondary" *ngIf="hasActiveFilters()" (click)="clearFilters()">
+                    <app-ui-icon name="x" size="sm" />
+                    <span>Limpiar búsqueda</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="create-button departments-empty__cta"
+                    *ngIf="!hasActiveFilters() && canWrite()"
+                    (click)="openCreateModal()"
+                  >
+                    <app-ui-icon name="plus" size="sm" />
+                    <span>Nuevo departamento</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside class="panel departments-audit" *ngIf="canReadAudit()">
+      <header class="departments-audit__head">
+        <span class="departments-audit__icon" aria-hidden="true">
+          <app-ui-icon name="audit" size="lg" />
+        </span>
+        <div>
+          <h3>Auditoría reciente</h3>
+          <p>{{ auditLogs().length ? auditLogs().length + ' evento(s)' : 'Sin eventos recientes' }}</p>
+        </div>
+      </header>
+
+      <div class="departments-audit__list" *ngIf="auditLogs().length; else noAudit">
+        <article class="departments-audit__item" *ngFor="let log of auditLogs()">
+          <div class="departments-audit__item-top">
+            <span class="departments-audit__badge">{{ auditActionLabel(log.action) }}</span>
+            <time>
+              <app-ui-icon name="clock" size="sm" />
+              {{ log.created_at | date: 'short' }}
+            </time>
+          </div>
+          <p class="departments-audit__resource">{{ log.resource }}</p>
+          <span class="departments-audit__user">
+            <app-ui-icon name="user" size="sm" />
+            {{ log.user_email || 'Sistema' }}
+          </span>
+        </article>
+      </div>
+
+      <ng-template #noAudit>
+        <div class="departments-audit__empty">
+          <app-ui-icon name="inbox-empty" size="lg" />
+          <p>No hay eventos de auditoría visibles para tu perfil en este momento.</p>
+        </div>
+      </ng-template>
+    </aside>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="modalOpen()" (click)="closeModal()">
+    <div
+      class="entity-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="department-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <form class="entity-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+        <header class="entity-modal__header">
+          <div class="entity-modal__heading">
+            <span class="entity-modal__eyebrow">{{ editingDepartmentId() ? 'Edición' : 'Alta' }}</span>
+            <h3 id="department-modal-title">{{ editingDepartmentId() ? 'Editar departamento' : 'Crear departamento' }}</h3>
+            <p class="entity-modal__subtitle">
+              {{
+                editingDepartmentId()
+                  ? 'Actualiza la información del área organizacional.'
+                  : 'Registra un departamento con nombre, código y descripción.'
+              }}
+            </p>
+          </div>
+          <button type="button" class="entity-modal__close" aria-label="Cerrar" (click)="closeModal()">×</button>
+        </header>
+
+        <div class="entity-modal__body">
+          <div class="entity-modal__grid">
+            <label class="entity-modal__field">
+              <span>Nombre</span>
+              <input formControlName="name" placeholder="Ej. Recursos Humanos" />
+            </label>
+
+            <label class="entity-modal__field">
+              <span>Código</span>
+              <input formControlName="code" placeholder="Ej. RRHH" />
+            </label>
+
+            <label class="entity-modal__field entity-modal__field--wide">
+              <span>Descripción</span>
+              <textarea rows="4" formControlName="description" placeholder="Describe las funciones del departamento"></textarea>
+            </label>
+          </div>
+        </div>
+
+        <p class="entity-modal__error" *ngIf="error()">{{ error() }}</p>
+
+        <footer class="entity-modal__footer">
+          <button type="button" class="entity-modal__btn entity-modal__btn--secondary" (click)="closeModal()">
+            Cancelar
+          </button>
+          <button type="submit" class="entity-modal__btn entity-modal__btn--primary" [disabled]="!canWrite() || saving()">
+            {{ saving() ? 'Guardando...' : editingDepartmentId() ? 'Actualizar departamento' : 'Crear departamento' }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</section>

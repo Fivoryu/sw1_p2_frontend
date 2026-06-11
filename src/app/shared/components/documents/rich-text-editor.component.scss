@@ -1,0 +1,42 @@
+.rich-text-editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 60vh;
+  background: #fff;
+  border-radius: 0 0 6px 6px;
+}
+
+.rich-text-editor__host {
+  flex: 1;
+  min-height: 55vh;
+}
+
+:host ::ng-deep .ql-toolbar.ql-snow {
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px 6px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+:host ::ng-deep .ql-container.ql-snow {
+  border: none;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+:host ::ng-deep .ql-editor {
+  min-height: 55vh;
+  padding: 1.5rem 2rem;
+  color: #1e293b;
+}
+
+:host ::ng-deep .ql-editor.ql-blank::before {
+  color: #94a3b8;
+  font-style: normal;
+  left: 2rem;
+}

@@ -1,0 +1,260 @@
+@use '../shared/styles/sidebar' as sidebar;
+
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 292px 1fr;
+  background: #f4f7fb;
+  transition: grid-template-columns 0.22s ease;
+}
+
+.shell--sidebar-collapsed {
+  grid-template-columns: 96px 1fr;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  height: 100vh;
+  max-height: 100vh;
+  padding: 1rem 0.85rem;
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.24), transparent 38%),
+    linear-gradient(180deg, #0f172a 0%, #172554 100%);
+  color: #e2e8f0;
+  overflow: hidden;
+  border-right: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle {
+  @include sidebar.sidebar-toggle-button;
+}
+
+.sidebar--collapsed {
+  padding: 0.85rem 0.45rem;
+  align-items: stretch;
+
+  .sidebar-top {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .brand-copy,
+  .session-copy,
+  .nav-section {
+    display: none;
+  }
+
+  .brand,
+  .session-card {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .brand-mark,
+  .session-avatar {
+    margin-inline: auto;
+  }
+
+  .nav-links a,
+  .logout-btn {
+    @include sidebar.sidebar-nav-link-collapsed;
+  }
+
+  .nav-text {
+    display: none;
+  }
+
+  .logout-btn {
+    width: 2.85rem;
+    margin-inline: auto;
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-shrink: 0;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.95rem;
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  color: #eff6ff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
+  flex-shrink: 0;
+}
+
+.brand h1 {
+  margin: 0.15rem 0 0;
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.brand p,
+.session-card span,
+.session-card small {
+  color: #cbd5e1;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #93c5fd;
+}
+
+.session-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  flex-shrink: 0;
+}
+
+.session-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.24);
+  color: #eff6ff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.session-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.nav-section {
+  @include sidebar.sidebar-nav-section;
+}
+
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.35rem;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.1rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.nav-links a,
+.logout-btn {
+  @include sidebar.sidebar-nav-link;
+}
+
+.nav-links a.active {
+  @include sidebar.sidebar-nav-link-active-icon;
+}
+
+.nav-icon {
+  @include sidebar.sidebar-nav-icon-wrap;
+}
+
+.nav-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.content {
+  padding: 1.25rem;
+  min-width: 0;
+}
+
+.logout-btn {
+  margin-top: auto;
+  width: 100%;
+  flex-shrink: 0;
+  justify-content: flex-start;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(148, 163, 184, 0.16);
+  color: #e2e8f0;
+
+  &:hover {
+    background: rgba(248, 113, 113, 0.12);
+    border-color: rgba(248, 113, 113, 0.28);
+    color: #fecaca;
+  }
+}
+
+@media (max-width: 900px) {
+  .shell,
+  .shell--sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    max-height: none;
+  }
+
+  .sidebar--collapsed .brand-copy,
+  .sidebar--collapsed .session-copy,
+  .sidebar--collapsed .nav-section {
+    display: flex;
+  }
+
+  .sidebar--collapsed .nav-section {
+    display: block;
+  }
+
+  .sidebar--collapsed .nav-text {
+    display: inline;
+  }
+
+  .sidebar--collapsed .nav-links a,
+  .sidebar--collapsed .logout-btn {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 2.85rem;
+    margin-inline: 0;
+    padding: 0.65rem 0.85rem;
+    justify-content: flex-start;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+}

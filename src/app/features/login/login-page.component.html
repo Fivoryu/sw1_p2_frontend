@@ -1,0 +1,48 @@
+<section class="login-page">
+  <div class="login-card">
+    <div class="login-copy">
+      <span class="eyebrow">SW1 · Front Web</span>
+      <h1>Administración operativa</h1>
+      <p>
+        Accede al panel del Sprint 1 para gestionar usuarios, roles, permisos y departamentos.
+      </p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
+      <label>
+        <span>Email</span>
+        <input type="email" formControlName="email" placeholder="admin@example.com" />
+      </label>
+
+      <label>
+        <span>Contraseña</span>
+        <input type="password" formControlName="password" placeholder="********" />
+      </label>
+
+      <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+      <button type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Ingresando...' : 'Ingresar' }}
+      </button>
+    </form>
+  </div>
+
+  <section class="demo-users">
+    <h2>Usuarios de prueba</h2>
+    <p class="demo-users__hint">Haz clic en cualquier tarjeta para iniciar sesión automáticamente.</p>
+    <div class="demo-users__grid">
+      <button
+        type="button"
+        class="demo-user-card"
+        *ngFor="let user of demoUsers"
+        (click)="loginAs(user)"
+        [disabled]="submitting()"
+        [title]="'Iniciar sesión como ' + user.fullName"
+      >
+        <span class="demo-user-card__name">{{ user.fullName }}</span>
+        <span class="demo-user-card__role" [class]="'role-' + user.role">{{ user.roleLabel }}</span>
+        <span class="demo-user-card__dept">{{ user.department }}</span>
+      </button>
+    </div>
+  </section>
+</section>

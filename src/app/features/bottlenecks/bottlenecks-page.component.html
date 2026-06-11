@@ -1,0 +1,170 @@
+<section class="page bottlenecks-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">IA operacional</span>
+      <h2>Cuellos de Botella</h2>
+      <p>Investiga acumulación de tareas, capacidad por departamento, actividades compartidas y ramas paralelas desbalanceadas.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="secondary" (click)="load()" [disabled]="loading()">
+        {{ loading() ? 'Analizando...' : 'Actualizar análisis' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="error-banner" *ngIf="error()">
+    <strong>No se pudo completar el análisis</strong>
+    <p>{{ error() }}</p>
+    <button type="button" (click)="load()" [disabled]="loading()">Reintentar</button>
+  </div>
+
+  <p class="muted loading" *ngIf="loading() && !analysis()">Analizando cuellos de botella...</p>
+
+  <ng-container *ngIf="analysis() as result">
+    <section class="stats-grid">
+      <article class="stat-card stat-card--critical">
+        <span>Críticos</span>
+        <strong>{{ result.summary.critical }}</strong>
+        <small>hallazgos urgentes</small>
+      </article>
+      <article class="stat-card stat-card--high">
+        <span>Altos</span>
+        <strong>{{ result.summary.high }}</strong>
+        <small>requieren atención</small>
+      </article>
+      <article class="stat-card">
+        <span>Tareas abiertas</span>
+        <strong>{{ result.summary.open_tasks }}</strong>
+        <small>en bandejas activas</small>
+      </article>
+      <article class="stat-card">
+        <span>Políticas analizadas</span>
+        <strong>{{ result.summary.policies_analyzed }}</strong>
+        <small>{{ result.summary.active_instances }} trámites activos</small>
+      </article>
+    </section>
+
+    <section class="toolbar panel">
+      <div class="toolbar-title">
+        <h3>Filtros del análisis</h3>
+        <p>Generado {{ result.generated_at | date:'short' }}</p>
+      </div>
+      <label class="filter-field">
+        <span>Severidad</span>
+        <app-custom-select
+          [selectValue]="severityFilter()"
+          (selectValueChange)="severityFilter.set($event)"
+          [options]="severityFilterOptions"
+          ariaLabel="Filtrar por severidad"
+          [compact]="true"
+        />
+      </label>
+    </section>
+
+    <section class="bottleneck-grid">
+      <article class="panel department-panel">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Carga por área</span>
+            <h3>Departamentos saturados</h3>
+          </div>
+          <span class="count-badge">{{ saturatedDepartments().length }}</span>
+        </div>
+        <div class="department-list" *ngIf="saturatedDepartments().length; else noDepartments">
+          <article class="department-row" *ngFor="let department of saturatedDepartments()">
+            <div class="department-row__meta">
+              <strong>{{ department.department_name }}</strong>
+              <small>{{ department.pending_tasks }} pendientes · {{ department.active_staff }} funcionarios · {{ department.tasks_per_staff }} tarea(s)/persona</small>
+            </div>
+            <div class="load-bar" role="presentation">
+              <span [style.width.%]="loadPercent(department.tasks_per_staff)"></span>
+            </div>
+            <span class="severity severity--{{ department.severity }}">{{ severityLabel(department.severity) }}</span>
+          </article>
+        </div>
+        <ng-template #noDepartments>
+          <div class="empty-state">
+            <strong>Sin colas abiertas</strong>
+            <small>Ningún departamento tiene tareas pendientes en este momento.</small>
+          </div>
+        </ng-template>
+      </article>
+
+      <article class="panel recommendations-panel">
+        <span class="eyebrow">Mitigación</span>
+        <h3>Recomendaciones</h3>
+        <ol *ngIf="result.recommendations.length; else noRecommendations">
+          <li *ngFor="let recommendation of result.recommendations">{{ recommendation }}</li>
+        </ol>
+        <ng-template #noRecommendations>
+          <div class="empty-state empty-state--compact">
+            <small>Sin recomendaciones adicionales para el estado actual.</small>
+          </div>
+        </ng-template>
+      </article>
+    </section>
+
+    <section class="panel findings-panel">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Hallazgos automáticos</span>
+          <h3>Actividades y colas críticas</h3>
+        </div>
+        <span class="count-badge">{{ visibleFindings().length }}</span>
+      </div>
+
+      <article class="finding-card" *ngFor="let finding of visibleFindings()">
+        <div class="finding-title">
+          <span class="severity severity--{{ finding.severity }}">{{ severityLabel(finding.severity) }}</span>
+          <div>
+            <h4>{{ finding.title }}</h4>
+            <p>{{ finding.description }}</p>
+          </div>
+        </div>
+        <div class="finding-metrics">
+          <span>Pendientes <strong>{{ metric(finding, 'pending_tasks') }}</strong></span>
+          <span>Espera prom. <strong>{{ metric(finding, 'avg_wait_hours') }} h</strong></span>
+          <span>Servicio prom. <strong>{{ metric(finding, 'avg_service_hours') }} h</strong></span>
+          <span>Políticas <strong>{{ metric(finding, 'shared_policy_count') }}</strong></span>
+        </div>
+        <p class="recommendation">{{ finding.recommendation }}</p>
+        <div class="policy-chips" *ngIf="finding.policy_names.length">
+          <span *ngFor="let policy of finding.policy_names.slice(0, 5)">{{ policy }}</span>
+        </div>
+      </article>
+
+      <div class="empty-state" *ngIf="!loading() && !visibleFindings().length">
+        <strong>Sin hallazgos</strong>
+        <small>No hay resultados para la severidad seleccionada.</small>
+      </div>
+    </section>
+
+    <section class="panel policy-panel">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Diseño de políticas</span>
+          <h3>Políticas con riesgo estructural</h3>
+        </div>
+        <span class="count-badge">{{ visiblePolicyFindings().length }}</span>
+      </div>
+
+      <article class="policy-row" *ngFor="let finding of visiblePolicyFindings()">
+        <span class="severity severity--{{ finding.severity }}">{{ severityLabel(finding.severity) }}</span>
+        <div class="policy-row__main">
+          <h4>{{ finding.policy_name }}</h4>
+          <p>{{ policyMeta(finding) }}</p>
+          <p *ngIf="finding.weak_departments.length">
+            Calles con poca capacidad: {{ finding.weak_departments.join(', ') }}
+          </p>
+          <p *ngIf="finding.fork_label">Rama paralela desbalanceada: {{ finding.fork_label }}</p>
+        </div>
+        <p class="policy-row__tip">{{ finding.recommendation }}</p>
+      </article>
+
+      <div class="empty-state" *ngIf="!loading() && !visiblePolicyFindings().length">
+        <strong>Sin riesgos estructurales</strong>
+        <small>No se detectaron políticas con riesgo para el filtro actual.</small>
+      </div>
+    </section>
+  </ng-container>
+</section>

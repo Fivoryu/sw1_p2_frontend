@@ -1,0 +1,730 @@
+.gh-repo {
+  display: grid;
+  gap: 0;
+  border: 1px solid #d0d7de;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  overflow: hidden;
+  font-size: 0.92rem;
+}
+
+.gh-repo__header {
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+}
+
+.gh-repo__title-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.gh-repo__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.gh-repo__title-row h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.gh-repo__owner {
+  color: #0969da;
+}
+
+.gh-repo__slash,
+.gh-repo__name {
+  color: #1f2328;
+}
+
+.gh-repo__desc {
+  margin: 0.2rem 0 0;
+  color: #656d76;
+}
+
+.gh-repo__badge {
+  margin-left: auto;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid #d0d7de;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: #656d76;
+  background: #ffffff;
+}
+
+.gh-repo__stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.65rem;
+  color: #656d76;
+  font-size: 0.84rem;
+}
+
+.gh-repo__nav {
+  display: flex;
+  gap: 0;
+  padding: 0 1rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #ffffff;
+}
+
+.gh-repo__nav-item {
+  padding: 0.75rem 0.85rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #656d76;
+  font-weight: 600;
+}
+
+.gh-repo__nav-item.is-active {
+  color: #1f2328;
+  border-bottom-color: #fd8c73;
+}
+
+.gh-repo__file-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  border-bottom: 1px solid #d0d7de;
+}
+
+.gh-repo__version-form {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(12rem, 1fr) auto;
+  gap: 0.6rem;
+  align-items: end;
+  padding: 0 1rem 0.75rem;
+}
+
+.gh-repo__version-form label {
+  display: grid;
+  gap: 0.25rem;
+  color: #656d76;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.gh-repo__version-form input {
+  min-width: 0;
+  border: 1px solid #d0d7de;
+  border-radius: 0.55rem;
+  padding: 0.52rem 0.65rem;
+}
+
+.gh-repo__version-form button {
+  border: 0;
+  border-radius: 0.55rem;
+  padding: 0.58rem 0.8rem;
+  background: #0969da;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.gh-repo__file-open {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  color: #1f2328;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gh-repo__file-open:hover {
+  background: #f6f8fa;
+}
+
+.gh-repo__file-row.is-selected .gh-repo__file-open {
+  background: #eef6ff;
+}
+
+.gh-repo__history-btn {
+  margin-right: 0.75rem;
+  padding: 0.35rem 0.65rem !important;
+  font-size: 0.82rem !important;
+}
+
+.gh-repo__row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  padding-right: 0.75rem;
+}
+
+.gh-repo__row-actions .gh-repo__history-btn {
+  margin-right: 0;
+}
+
+.gh-repo__history-intro {
+  padding: 1rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+}
+
+.gh-repo__history-intro p {
+  margin: 0.35rem 0 0;
+  color: #656d76;
+}
+
+.gh-repo__history-table-wrap {
+  padding: 0 0 1rem;
+}
+
+.gh-repo__history-title {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+}
+
+.gh-repo__history-table {
+  overflow-x: auto;
+}
+
+.gh-repo__history-head,
+.gh-repo__history-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.2fr) 0.6fr 1fr 1.1fr 1fr 1.2fr 1.2fr 0.7fr 0.7fr minmax(14rem, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  padding: 0.7rem 1rem;
+  min-width: 980px;
+}
+
+.gh-repo__history-head {
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #656d76;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.gh-repo__history-row {
+  border-bottom: 1px solid #eef2f7;
+  background: #ffffff;
+  color: #1f2328;
+  font-size: 0.86rem;
+}
+
+.gh-repo__history-row span {
+  word-break: break-word;
+}
+
+.gh-repo__status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.gh-repo__status--current {
+  background: #dafbe1;
+  color: #1a7f37;
+}
+
+.gh-repo__doc-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #0969da;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gh-repo__doc-link:hover {
+  text-decoration: underline;
+}
+
+.gh-repo__toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+}
+
+.gh-repo__branch {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.gh-repo__branch button,
+.gh-repo__branch--single span {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #d0d7de;
+  border-radius: 0.45rem;
+  background: #ffffff;
+  color: #1f2328;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.gh-repo__branch button.is-active {
+  border-color: #0969da;
+  color: #0969da;
+  background: #eef6ff;
+}
+
+.gh-repo__btn {
+  padding: 0.4rem 0.75rem !important;
+  font-size: 0.84rem !important;
+}
+
+.gh-repo__upload {
+  padding: 1rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #ffffff;
+}
+
+.gh-repo__upload-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.gh-repo__dropzone {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  border: 1px dashed #d0d7de;
+  border-radius: 0.5rem;
+  background: #f6f8fa;
+}
+
+.gh-repo__dropzone--active {
+  border-color: #0969da;
+  background: #eef6ff;
+}
+
+.gh-repo__file-picker {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.45rem;
+  background: #2da44e;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gh-repo__file-picker input {
+  display: none;
+}
+
+.gh-repo__upload-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.55rem;
+}
+
+.gh-repo__empty {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: center;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: #656d76;
+}
+
+.gh-repo__file-table {
+  display: grid;
+}
+
+.gh-repo__file-head {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) auto auto 5.5rem;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #656d76;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.gh-repo__history-filter {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #eef6ff;
+  color: #1f2328;
+  font-size: 0.86rem;
+}
+
+.gh-repo__file-name {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #0969da;
+  font-weight: 600;
+}
+
+.gh-repo__kind {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 1.5rem;
+  border-radius: 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: #656d76;
+}
+
+.gh-repo__kind--pdf { background: #cf222e; }
+.gh-repo__kind--image { background: #8250df; }
+.gh-repo__kind--word { background: #0969da; }
+.gh-repo__kind--excel { background: #1a7f37; }
+
+.doc-comments {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.doc-comments__head,
+.doc-comments__meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.doc-comments__composer {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.doc-comments__composer textarea {
+  width: 100%;
+}
+
+.doc-comments__item {
+  padding: 0.75rem;
+  border: 1px solid #d0d7de;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.doc-comments__item p {
+  margin: 0.35rem 0 0;
+}
+
+.doc-comments__empty {
+  color: #64748b;
+}
+.gh-repo__kind--text { background: #656d76; }
+
+.gh-repo__muted {
+  color: #656d76;
+  font-size: 0.84rem;
+}
+
+.gh-repo__version {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1f2328;
+}
+
+.gh-repo__breadcrumb {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #656d76;
+}
+
+.gh-repo__crumb {
+  border: 0;
+  background: transparent;
+  color: #0969da;
+  padding: 0;
+  font-weight: 600;
+}
+
+.gh-repo__blob-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #d0d7de;
+}
+
+.gh-repo__blob-head p {
+  margin: 0.25rem 0 0;
+  color: #656d76;
+}
+
+.gh-repo__blob-actions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.gh-repo__meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #656d76;
+  font-size: 0.82rem;
+}
+
+.gh-repo__version-form {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  border-bottom: 1px solid #d0d7de;
+}
+
+.gh-repo__preview {
+  min-height: 16rem;
+  padding: 1rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #ffffff;
+}
+
+.gh-repo__preview iframe,
+.gh-repo__preview img {
+  width: 100%;
+  min-height: 18rem;
+  border: 1px solid #d0d7de;
+  border-radius: 0.45rem;
+  background: #f6f8fa;
+}
+
+.gh-repo__preview-fallback {
+  padding: 2rem;
+  text-align: center;
+  color: #656d76;
+  background: #f6f8fa;
+  border-radius: 0.45rem;
+}
+
+.gh-repo__commits {
+  padding: 1rem;
+}
+
+.gh-repo__commits header {
+  margin-bottom: 0.75rem;
+}
+
+.gh-repo__commit {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.gh-repo__commit-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  background: #d0d7de;
+}
+
+.gh-repo__commit.is-head .gh-repo__commit-dot {
+  background: #2da44e;
+  box-shadow: 0 0 0 3px rgba(45, 164, 78, 0.15);
+}
+
+.gh-repo__commit-body {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #d0d7de;
+  border-radius: 0.45rem;
+  background: #f6f8fa;
+}
+
+.gh-repo__commit-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.gh-repo__commit-body p,
+.gh-repo__commit-body small {
+  margin: 0.2rem 0 0;
+  color: #656d76;
+}
+
+.doc-preview-backdrop {
+  z-index: 10060;
+}
+
+.doc-preview-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 52rem);
+  max-height: calc(100vh - 3rem);
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: #ffffff;
+  box-shadow:
+    0 24px 48px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(148, 163, 184, 0.12);
+}
+
+.doc-preview-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.doc-preview-modal__heading {
+  min-width: 0;
+}
+
+.doc-preview-modal__eyebrow {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.doc-preview-modal__header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.3;
+  word-break: break-word;
+  color: #0f172a;
+}
+
+.doc-preview-modal__subtitle {
+  margin: 0.45rem 0 0;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.doc-presence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin-top: 0.55rem;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.doc-presence__status {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: #94a3b8;
+}
+
+.doc-presence__status.is-online {
+  background: #16a34a;
+}
+
+.doc-presence__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #2563eb;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.doc-preview-modal__body {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+}
+
+.doc-preview-modal__body .doc-preview--compact .doc-preview__frame {
+  min-height: 20rem;
+  max-height: 26rem;
+}
+
+.doc-preview-modal__body .doc-preview--compact .doc-preview__text {
+  max-height: 26rem;
+}
+
+.doc-preview-modal__body .doc-preview--compact .doc-preview__image,
+.doc-preview-modal__body .doc-preview--compact .doc-preview__media {
+  max-height: 26rem;
+}
+
+.doc-preview-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+@media (max-width: 900px) {
+  .doc-preview-modal__footer {
+    flex-direction: column-reverse;
+  }
+
+  .doc-preview-modal__footer .entity-modal__btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .gh-repo__file-head,
+  .gh-repo__file-open {
+    grid-template-columns: 1fr;
+  }
+
+  .gh-repo__file-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gh-repo__upload-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .gh-repo__toolbar,
+  .gh-repo__blob-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

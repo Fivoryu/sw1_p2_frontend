@@ -1,0 +1,525 @@
+<section class="page" *ngIf="!loading(); else loadingBlock">
+  <ng-container *ngIf="policy() as policy; else errorBlock">
+    <header class="editor-topbar panel">
+      <div class="editor-topbar-row editor-topbar-row--main editor-topbar-row--compact">
+        <div class="editor-title-block">
+          <a routerLink="/panel/politicas" class="back-link back-link--inline">← Políticas</a>
+          <div class="editor-title-line">
+            <h2>{{ policy.name }}</h2>
+            <span class="badge draft-badge">{{ policy.status }}</span>
+          </div>
+        </div>
+
+        <div class="editor-stats-inline">
+          <span><strong>{{ lanes().length }}</strong> calles</span>
+          <span><strong>{{ nodes().length }}</strong> nodos</span>
+          <span><strong>{{ edges().length }}</strong> flujos</span>
+          <span><strong>{{ forms().length }}</strong> formularios</span>
+        </div>
+
+        <label class="top-field top-field--inline">
+          <span>Nodo</span>
+          <input [(ngModel)]="nodeLabel" placeholder="Etiqueta" [disabled]="!canEditPolicy()" />
+        </label>
+        <label class="top-field top-field--inline">
+          <span>Flujo</span>
+          <input [(ngModel)]="edgeLabel" placeholder="[Sí]/[No]" [disabled]="!canEditPolicy()" />
+        </label>
+        <label class="top-field top-field--inline">
+          <span>Calle</span>
+          <select [(ngModel)]="selectedLaneId" [disabled]="!canEditPolicy()">
+            <option value="">Auto</option>
+            <option *ngFor="let lane of lanes()" [value]="lane.id">{{ lane.department_name }}</option>
+          </select>
+        </label>
+
+        <span class="active-tool-chip">{{ toolLabel(activeTool()) }}</span>
+
+        <div class="editor-topbar-actions">
+          <app-policy-editor-presence
+            *ngIf="collaborationConnected()"
+            [users]="collaborationPresence()"
+          />
+          <span class="collab-version-chip" *ngIf="collaborationConnected()">v{{ collaborationVersion() }}</span>
+          <span class="info-message read-only-banner" *ngIf="!canEditPolicy()">Solo lectura: no puedes editar este diagrama.</span>
+          <button type="button" class="secondary" *ngIf="canSharePolicy()" (click)="openShareModal()">Compartir</button>
+          <button
+            type="button"
+            class="secondary"
+            *ngIf="canSharePolicy()"
+            (click)="toggleCompanyShare()"
+          >
+            {{ companyShared() ? '✓ Empresa' : 'Compartir con empresa' }}
+          </button>
+          <button type="button" class="secondary" *ngIf="canEditPolicy()" (click)="openCreateFormModal()">Formulario +</button>
+          <button type="button" class="primary" *ngIf="canEditPolicy() && isDraft()" (click)="openValidationPanel()" [disabled]="saving()">
+            Validar y Publicar
+          </button>
+          <button type="button" class="success" *ngIf="isPublished()" disabled>
+            ✓ Publicada
+          </button>
+          <button type="button" *ngIf="canEditPolicy()" (click)="saveDiagram()" [disabled]="saving()">
+            {{ saving() ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <span class="info-message" *ngIf="infoMessage()">{{ infoMessage() }}</span>
+          <span class="error" *ngIf="error()">{{ error() }}</span>
+        </div>
+      </div>
+
+        <div class="editor-topbar-row editor-topbar-row--selection" *ngIf="selectedEntity() as selected">
+        <span class="selection-label">
+          {{ selected.kind === 'lane' ? 'Calle' : selected.kind === 'node' ? nodeTypeLabel(selected.item.type) : 'Flujo' }} seleccionado
+        </span>
+        <label class="top-field top-field--grow">
+          <span>{{ selected.kind === 'lane' ? 'Nombre' : 'Etiqueta' }}</span>
+          <input
+            [ngModel]="selected.kind === 'lane' ? selected.item.department_name : selected.item.label"
+            (ngModelChange)="updateSelectedLabel($event)"
+            [placeholder]="selected.kind === 'edge' ? '[Sí], [No]...' : 'Etiqueta'"
+            [disabled]="!canEditPolicy()"
+          />
+        </label>
+        <label class="top-field" *ngIf="selected.kind === 'node' && selected.item.type !== 'initial' && selected.item.type !== 'final'">
+          <span>Calle</span>
+          <select [ngModel]="selected.item.lane_id || ''" (ngModelChange)="updateSelectedNodeLane($event)" [disabled]="!canEditPolicy()">
+            <option value="">Sin calle</option>
+            <option *ngFor="let lane of lanes()" [value]="lane.id">{{ lane.department_name }}</option>
+          </select>
+        </label>
+        <button type="button" class="secondary" (click)="commitSelectedEdits()" [disabled]="!canEditPolicy()">Aplicar</button>
+        </div>
+
+        <div class="editor-topbar-row editor-topbar-row--selection" *ngIf="selectedEntity() as selectedActivity">
+          <ng-container *ngIf="selectedActivity.kind === 'node' && selectedActivity.item.type === 'activity'">
+            <span class="selection-label">Formularios de la actividad</span>
+            <div class="activity-form-pills" *ngIf="formsBySelectedActivity().length; else noActivityForms">
+              <button type="button" class="ghost form-pill" *ngFor="let form of formsBySelectedActivity()" (click)="openEditFormModal(form)">
+                {{ form.name }}
+              </button>
+            </div>
+            <ng-template #noActivityForms>
+              <span class="muted">Sin formularios asociados.</span>
+            </ng-template>
+            <button type="button" class="secondary" (click)="openCreateFormModal(selectedActivity.item.id)">Agregar formulario a actividad</button>
+          </ng-container>
+        </div>
+      </header>
+
+    <section class="panel canvas-panel">
+      <div class="diagram-stage">
+        <div
+          class="canvas-toolbar-overlay"
+          (click)="$event.stopPropagation()"
+          (mousedown)="$event.stopPropagation()"
+        >
+          <div class="canvas-toolbar-compact">
+            <div class="tb-group" *ngIf="canEditPolicy()">
+              <button type="button" class="tb-btn" (click)="undo()" [disabled]="!canUndo()" title="Deshacer">↶</button>
+              <button type="button" class="tb-btn" (click)="redo()" [disabled]="!canRedo()" title="Rehacer">↷</button>
+              <button type="button" class="tb-btn" (click)="copySelection()" [disabled]="!selectedCellIds().length" title="Copiar">⎘</button>
+              <button type="button" class="tb-btn" (click)="cutSelection()" [disabled]="!selectedCellIds().length" title="Cortar">✂</button>
+              <button type="button" class="tb-btn" (click)="pasteClipboard()" [disabled]="!hasClipboard()" title="Pegar">📋</button>
+              <button type="button" class="tb-btn tb-btn--danger" (click)="deleteSelection()" [disabled]="!selectedCellIds().length" title="Eliminar">🗑</button>
+            </div>
+
+            <span class="tb-sep" aria-hidden="true" *ngIf="canEditPolicy()"></span>
+
+            <div class="tb-group" *ngIf="canEditPolicy()">
+              <button type="button" class="tb-btn tb-btn--layout" (click)="autoLayout()" title="Reordenar automáticamente">⟺</button>
+            </div>
+
+            <span class="tb-sep" aria-hidden="true" *ngIf="canEditPolicy()"></span>
+
+            <div class="tb-group">
+              <button type="button" class="tb-btn" (click)="zoomIn()" title="Acercar">＋</button>
+              <button type="button" class="tb-btn" (click)="zoomOut()" title="Alejar">－</button>
+              <select class="tb-select tb-select--export" (change)="exportDiagramFormatFromEvent($event)" title="Exportar diagrama">
+                <option value="">Exportar</option>
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="svg">SVG</option>
+                <option value="drawio">draw.io</option>
+                <option value="json">JSON</option>
+              </select>
+            </div>
+
+            <span class="tb-sep" aria-hidden="true"></span>
+
+            <div class="tb-group">
+              <button type="button" class="tb-tool" [class.active-insert]="activeTool() === 'select'" (click)="setTool('select')" title="Selección">
+                <span class="uml-icon uml-icon--select" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="tb-tool" [class.active-insert]="activeTool() === 'pan'" (click)="setTool('pan')" title="Desplazar">
+                <span class="uml-icon uml-icon--pan" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <span class="tb-sep" aria-hidden="true" *ngIf="canEditPolicy()"></span>
+
+            <select class="tb-select" [(ngModel)]="selectedDepartmentId" title="Departamento para nueva calle" *ngIf="canEditPolicy()" [disabled]="!canEditPolicy()">
+              <option value="">Depto. calle</option>
+              <option *ngFor="let department of availableDepartments()" [value]="department.id">{{ department.name }}</option>
+            </select>
+
+            <div class="tb-tools" *ngIf="canEditPolicy()">
+              <button type="button" class="tb-tool" [class.active-insert]="activeTool() === 'lane'" (click)="setTool('lane')" title="Calle">
+                <span class="uml-icon uml-icon--lane" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="tb-tool" [class.active-insert]="activeTool() === 'initial'" (click)="setTool('initial')" (mousedown)="onPaletteToolPointerDown('initial', $event)" title="Inicio — arrastra o clic en lienzo">
+                <span class="uml-icon uml-icon--initial" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="tb-tool" [class.active-insert]="activeTool() === 'activity'" (click)="setTool('activity')" (mousedown)="onPaletteToolPointerDown('activity', $event)" title="Actividad — arrastra o clic en lienzo">
+                <span class="uml-icon uml-icon--activity" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="tb-tool" [class.active-insert]="activeTool() === 'decision'" (click)="setTool('decision')" (mousedown)="onPaletteToolPointerDown('decision', $event)" title="Decisión — arrastra o clic en lienzo">
+                <span class="uml-icon uml-icon--decision" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="tb-tool" [class.active-insert]="activeTool() === 'fork'" (click)="setTool('fork')" (mousedown)="onPaletteToolPointerDown('fork', $event)" title="Fork — arrastra o clic en lienzo">
+                <span class="uml-icon uml-icon--fork" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="tb-tool" [class.active-insert]="activeTool() === 'join'" (click)="setTool('join')" (mousedown)="onPaletteToolPointerDown('join', $event)" title="Join — arrastra o clic en lienzo">
+                <span class="uml-icon uml-icon--join" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="tb-tool" [class.active-insert]="activeTool() === 'final'" (click)="setTool('final')" (mousedown)="onPaletteToolPointerDown('final', $event)" title="Fin — arrastra o clic en lienzo">
+                <span class="uml-icon uml-icon--final" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="tb-tool" [class.active-insert]="activeTool() === 'edge'" (click)="setTool('edge')" title="Flujo">
+                <span class="uml-icon uml-icon--edge" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <span class="active-tool-chip edge-chip" *ngIf="edgeDraftSourceId()">Origen</span>
+          </div>
+        </div>
+
+          <div class="graph-canvas-host" [class.hidden-canvas]="!graphReady()">
+            <div
+              #graphContainer
+              class="graph-canvas"
+              [class.pan-mode]="canPanCanvas()"
+            ></div>
+          </div>
+          <div class="graph-fallback" *ngIf="!graphReady()">
+            <div class="fallback-header">
+              <strong>Editor alternativo del diagrama</strong>
+              <small>maxGraph no inició en este entorno. Este modo alternativo sigue siendo editable y guarda el mismo modelo del diagrama.</small>
+            </div>
+
+            <div #fallbackStage class="fallback-stage" (click)="onFallbackStageClick($event)">
+              <svg class="fallback-edge-layer">
+                <defs>
+                  <marker id="fallback-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#1d4ed8"></path>
+                  </marker>
+                </defs>
+                <g *ngFor="let edge of fallbackSvgEdges()" (contextmenu)="openContextMenuFor(edge.id, $event)">
+                  <line [attr.x1]="edge.x1" [attr.y1]="edge.y1" [attr.x2]="edge.x2" [attr.y2]="edge.y2" marker-end="url(#fallback-arrow)"></line>
+                  <text [attr.x]="edge.tx" [attr.y]="edge.ty">{{ edge.label }}</text>
+                </g>
+              </svg>
+
+              <section
+                class="fallback-lane-block"
+                *ngFor="let lane of lanes(); let i = index"
+                [style.top.px]="laneY(i)"
+                (click)="onFallbackLaneClick(lane, $event)"
+                (contextmenu)="openContextMenuFor(lane.id, $event)"
+              >
+                <header>
+                  <strong>{{ lane.department_name }}</strong>
+                  <small>{{ lane.department_id }}</small>
+                </header>
+              </section>
+
+              <article
+                class="fallback-node floating-node"
+                *ngFor="let node of nodes()"
+                [class.global-node]="node.lane_id === null"
+                [class.selected-node]="selectedCellIds().includes(node.id)"
+                [class.node-initial]="node.type === 'initial'"
+                [class.node-final]="node.type === 'final'"
+                [class.node-decision]="node.type === 'decision'"
+                [class.node-fork]="node.type === 'fork' || node.type === 'join'"
+                [style.left.px]="node.x"
+                [style.top.px]="node.y"
+                [style.width.px]="node.width"
+                [style.height.px]="node.height"
+                (click)="onFallbackNodeClick(node, $event)"
+                (mousedown)="onFallbackNodePointerDown(node, $event)"
+                (contextmenu)="openContextMenuFor(node.id, $event)"
+              >
+                <span>{{ nodeTypeLabel(node.type) }}</span>
+                <strong>{{ node.label || 'Sin etiqueta' }}</strong>
+              </article>
+
+              <p class="muted empty-fallback" *ngIf="!lanes().length && !nodes().length">Aún no hay calles ni nodos para mostrar.</p>
+            </div>
+          </div>
+
+        <div class="context-menu" *ngIf="contextMenu().visible && canEditPolicy()" [style.left.px]="contextMenu().x" [style.top.px]="contextMenu().y" (click)="$event.stopPropagation()">
+          <button type="button" (click)="renameContextCell()">Renombrar / editar</button>
+          <button type="button" (click)="duplicateContextCell()">Duplicar</button>
+          <button type="button" class="danger-item" (click)="deleteContextCell()">Eliminar</button>
+        </div>
+
+        <div
+          class="palette-drag-preview"
+          *ngIf="paletteDragPreview() as preview"
+          [style.left.px]="preview.clientX + 14"
+          [style.top.px]="preview.clientY + 14"
+        >
+          <span [class]="palettePreviewIconClass(preview.tool)" aria-hidden="true"></span>
+          <span>{{ toolLabel(preview.tool) }}</span>
+        </div>
+      </div>
+
+      <section class="forms-below panel">
+        <div class="panel-title-row">
+          <div>
+            <h3>Formularios de la política</h3>
+            <p class="muted">La política y el formulario se construyen juntos. Selecciona una actividad para filtrar sus formularios.</p>
+          </div>
+          <button type="button" class="secondary" (click)="openCreateFormModal()">Nuevo formulario</button>
+        </div>
+
+        <div class="forms-grid" *ngIf="forms().length; else noFormsBlock">
+          <article class="form-summary-card" *ngFor="let form of (formsBySelectedActivity().length ? formsBySelectedActivity() : forms())">
+            <div class="form-summary-head">
+              <div>
+                <h4>{{ form.name }}</h4>
+                <p>{{ form.description }}</p>
+              </div>
+              <button type="button" class="ghost" (click)="openEditFormModal(form)">Editar</button>
+            </div>
+            <div class="form-summary-meta">
+              <span><strong>Actividad:</strong> {{ form.activity_id || 'Sin actividad' }}</span>
+              <span><strong>Campos:</strong> {{ form.fields.length }}</span>
+            </div>
+            <div class="form-summary-fields">
+              <span *ngFor="let field of form.fields">{{ field.label }} · {{ fieldTypeLabel(field.type) }}</span>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #noFormsBlock>
+          <div class="empty-forms-state">
+            <strong>No hay formularios creados todavía.</strong>
+            <small>Crea uno y asígnalo a una actividad del diagrama.</small>
+          </div>
+        </ng-template>
+      </section>
+    </section>
+  </ng-container>
+</section>
+
+<div class="modal-backdrop" *ngIf="formModalOpen()" (click)="closeFormModal()">
+  <div
+    class="entity-modal entity-modal--form-editor"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="policy-form-modal-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="entity-modal__header">
+      <div class="entity-modal__heading">
+        <span class="entity-modal__eyebrow">HU-2.4</span>
+        <h3 id="policy-form-modal-title">{{ editingFormId() ? 'Editar formulario' : 'Nuevo formulario' }}</h3>
+      </div>
+      <button type="button" class="entity-modal__close" aria-label="Cerrar" (click)="closeFormModal()">×</button>
+    </header>
+
+    <div class="entity-modal__body">
+      <div class="entity-modal__grid">
+        <label class="entity-modal__field">
+          <span>Nombre</span>
+          <input [(ngModel)]="formName" placeholder="Ej. Formulario de solicitud" />
+        </label>
+        <label class="entity-modal__field">
+          <span>Actividad</span>
+          <select [(ngModel)]="formActivityId">
+            <option value="">Seleccionar actividad</option>
+            <option *ngFor="let activity of activityNodes()" [value]="activity.id">{{ activity.label || activity.id }}</option>
+          </select>
+        </label>
+        <label class="entity-modal__field entity-modal__field--wide">
+          <span>Descripción</span>
+          <textarea rows="2" [(ngModel)]="formDescription" placeholder="Breve descripción del formulario"></textarea>
+        </label>
+      </div>
+
+      <div class="form-fields-editor">
+        <div class="form-fields-editor__header">
+          <div>
+            <h4>Preguntas</h4>
+            <p class="muted">Define qué información debe completar el funcionario.</p>
+          </div>
+          <button type="button" class="entity-modal__btn entity-modal__btn--secondary form-fields-editor__add" (click)="addFormField()">
+            Pregunta +
+          </button>
+        </div>
+
+        <div class="field-card field-card--simple" *ngFor="let field of formFields; let fieldIndex = index; trackBy: trackFormField">
+          <div class="field-card__row">
+            <span class="field-card__index">{{ fieldIndex + 1 }}</span>
+
+            <label class="entity-modal__field field-card__question">
+              <span>Pregunta</span>
+              <input
+                [ngModel]="field.label"
+                (ngModelChange)="onFieldLabelChange(field.id, $event)"
+                placeholder="Ej. Número de folio"
+              />
+            </label>
+
+            <div class="entity-modal__field field-type-picker-field field-card__type">
+              <span>Tipo</span>
+              <button
+                type="button"
+                class="field-type-picker__trigger"
+                (click)="toggleFieldTypePicker(field.id, $event)"
+                [attr.aria-expanded]="isFieldTypePickerOpen(field.id)"
+                aria-haspopup="listbox"
+              >
+                <span class="field-type-picker__trigger-label">{{ fieldTypeLabel(field.type) }}</span>
+                <span class="field-type-picker__chevron" aria-hidden="true">▾</span>
+              </button>
+            </div>
+
+            <label class="field-card__required">
+              <input type="checkbox" [ngModel]="field.required" (ngModelChange)="updateFormField(field.id, { required: $event })" />
+              <span>Obligatorio</span>
+            </label>
+
+            <button type="button" class="ghost icon-btn danger-item field-card__remove" (click)="removeFormField(field.id)" title="Eliminar">×</button>
+          </div>
+
+          <section class="field-options-editor" *ngIf="fieldTypeNeedsOptions(field.type)">
+            <div class="field-options-editor__head">
+              <div>
+                <strong>{{ fieldOptionsEditorTitle(field.type) }}</strong>
+                <p class="muted">{{ fieldOptionsEditorHint(field.type) }}</p>
+              </div>
+              <button type="button" class="ghost field-options-editor__add" (click)="addFieldOption(field.id)">
+                + Opción
+              </button>
+            </div>
+
+            <div class="field-options-editor__preview" *ngIf="fieldOptionsPreview(field).length">
+              <span class="field-options-editor__preview-label">Vista previa</span>
+
+              <div class="options-preview options-preview--select" *ngIf="field.type === 'select'">
+                <span class="options-preview__control">Seleccionar...</span>
+                <span class="options-preview__chevron" aria-hidden="true">▾</span>
+              </div>
+
+              <div class="options-preview options-preview--multiselect" *ngIf="field.type === 'multiselect'">
+                <span class="options-preview__chip" *ngFor="let option of fieldOptionsPreview(field)">
+                  <span class="options-preview__check" aria-hidden="true">☐</span>
+                  {{ option }}
+                </span>
+              </div>
+
+              <div class="options-preview options-preview--radio" *ngIf="field.type === 'radio'">
+                <span class="options-preview__chip" *ngFor="let option of fieldOptionsPreview(field)">
+                  <span class="options-preview__radio" aria-hidden="true">○</span>
+                  {{ option }}
+                </span>
+              </div>
+            </div>
+
+            <div class="field-options-editor__list">
+              <div
+                class="field-option-item"
+                *ngFor="let option of field.options; let optionIndex = index; trackBy: trackOptionIndex"
+              >
+                <span class="field-option-item__index">{{ optionIndex + 1 }}</span>
+                <input
+                  [ngModel]="option"
+                  (ngModelChange)="updateFieldOption(field.id, optionIndex, $event)"
+                  [placeholder]="'Opción ' + (optionIndex + 1)"
+                />
+                <button
+                  type="button"
+                  class="ghost icon-btn danger-item"
+                  (click)="removeFieldOption(field.id, optionIndex)"
+                  title="Quitar opción"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <p class="field-options-editor__empty muted" *ngIf="!field.options.length">
+              Agrega al menos una opción con el botón <strong>+ Opción</strong>.
+            </p>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="field-type-picker__menu"
+      *ngIf="openFieldTypePickerId() as pickerFieldId"
+      [ngStyle]="fieldTypePickerMenuStyle() ?? undefined"
+      role="listbox"
+      (click)="$event.stopPropagation()"
+    >
+      <section *ngFor="let group of formFieldTypeGroups" class="field-type-picker__group">
+        <h6>{{ group }}</h6>
+        <button
+          type="button"
+          *ngFor="let option of fieldTypesByGroup(group)"
+          class="field-type-picker__option"
+          [class.field-type-picker__option--active]="isSelectedFieldType(pickerFieldId, option.value)"
+          (click)="selectFieldType(pickerFieldId, option.value)"
+          role="option"
+          [attr.aria-selected]="isSelectedFieldType(pickerFieldId, option.value)"
+        >
+          <strong>{{ option.label }}</strong>
+        </button>
+      </section>
+    </div>
+
+    <p class="entity-modal__error" *ngIf="formError()">{{ formError() }}</p>
+
+    <footer class="entity-modal__footer">
+      <button type="button" class="entity-modal__btn entity-modal__btn--secondary" (click)="closeFormModal()">Cancelar</button>
+      <button type="button" class="entity-modal__btn entity-modal__btn--primary" (click)="savePolicyForm()">
+        {{ editingFormId() ? 'Actualizar formulario' : 'Guardar formulario' }}
+      </button>
+    </footer>
+  </div>
+</div>
+
+@if (shareModalOpen() && policy()) {
+  <app-policy-collaborators-modal
+    [policyId]="policy()!.id"
+    [userId]="currentUserId()"
+    [collaborators]="collaborators()"
+    (closed)="closeShareModal()"
+    (collaboratorsAdded)="onCollaboratorsUpdated($event)"
+  />
+}
+
+<!-- Validation Panel (HU-2.6) -->
+<div class="validation-panel-overlay" *ngIf="showValidationPanel()" (click)="closeValidationPanel()">
+  <div class="validation-panel-container" (click)="$event.stopPropagation()">
+    <app-policy-validation-panel
+      [policyId]="policy()?.id || ''"
+      (published)="onPolicyPublished()"
+      (closed)="closeValidationPanel()"
+    />
+  </div>
+</div>
+
+<ng-template #loadingBlock>
+  <section class="page">
+    <div class="panel">Cargando editor de política...</div>
+  </section>
+</ng-template>
+
+<ng-template #errorBlock>
+  <section class="page">
+    <div class="panel error-panel">{{ error() }}</div>
+  </section>
+</ng-template>

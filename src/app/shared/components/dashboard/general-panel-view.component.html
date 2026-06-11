@@ -1,0 +1,138 @@
+<section class="general-panel">
+  <header class="general-hero panel">
+    <div>
+      <span class="eyebrow">Panel de Control</span>
+      <h1>{{ panel().title }}</h1>
+      <p>{{ panel().subtitle }}</p>
+    </div>
+    <span class="general-badge">Vista general</span>
+  </header>
+
+  <app-dashboard-metric-grid class="general-metrics" [metrics]="panel().metrics" />
+
+  <div class="general-charts">
+    @if (chartByKey('instances_by_status'); as chart) {
+      <article class="general-chart-card panel">
+        <header>
+          <h3>{{ chart.title }}</h3>
+          @if (chart.description) {
+            <p>{{ chart.description }}</p>
+          }
+        </header>
+        <app-dashboard-donut-chart [points]="chart.points" />
+      </article>
+    }
+
+    @if (chartByKey('instances_by_department'); as chart) {
+      <article class="general-chart-card panel">
+        <header>
+          <h3>{{ chart.title }}</h3>
+          @if (chart.description) {
+            <p>{{ chart.description }}</p>
+          }
+        </header>
+        <app-dashboard-bar-chart [points]="chart.points" />
+      </article>
+    }
+
+    @if (chartByKey('instances_by_policy'); as chart) {
+      <article class="general-chart-card panel general-chart-card--wide">
+        <header>
+          <h3>{{ chart.title }}</h3>
+          @if (chart.description) {
+            <p>{{ chart.description }}</p>
+          }
+        </header>
+        <app-dashboard-bar-chart [points]="chart.points" />
+      </article>
+    }
+  </div>
+
+  <div class="general-main-grid">
+    @if (chartByKey('bottlenecks_chart'); as chart) {
+      <article class="general-card panel">
+        <header class="general-card__head">
+          <div>
+            <h3>{{ chart.title }}</h3>
+            @if (chart.description) {
+              <p>{{ chart.description }}</p>
+            }
+          </div>
+        </header>
+        @if (chart.points.length) {
+          <app-dashboard-bar-chart [points]="chart.points" />
+        } @else {
+          <p class="general-empty general-empty--success">Sin cuellos de botella detectados</p>
+        }
+      </article>
+    }
+
+    @if (workloadSection(); as section) {
+      <article class="general-card panel">
+        <header class="general-card__head">
+          <div>
+            <h3>{{ section.title }}</h3>
+            @if (section.description) {
+              <p>{{ section.description }}</p>
+            }
+          </div>
+        </header>
+        <div class="general-list">
+          @for (item of section.items; track item.title + (item.value ?? '')) {
+            <article class="general-list__item" [class]="toneClass(item.tone)">
+              <span>{{ item.title }}</span>
+              <strong>{{ item.value }}</strong>
+            </article>
+          }
+        </div>
+      </article>
+    }
+
+    @if (reviewSection(); as section) {
+      <article class="general-card panel general-card--wide">
+        <header class="general-card__head">
+          <div>
+            <h3>{{ section.title }}</h3>
+            @if (section.description) {
+              <p>{{ section.description }}</p>
+            }
+          </div>
+        </header>
+        <div class="general-review-grid">
+          @for (item of section.items; track item.title + (item.subtitle ?? '')) {
+            <article class="general-review-card" [class]="toneClass(item.tone)">
+              <strong>{{ item.title }}</strong>
+              @if (item.subtitle) {
+                <small>{{ item.subtitle }}</small>
+              }
+              @if (item.value) {
+                <span class="general-tag">{{ item.value }}</span>
+              }
+            </article>
+          }
+        </div>
+      </article>
+    }
+
+    @if (anomaliesSection(); as section) {
+      <article class="general-card panel">
+        <header class="general-card__head">
+          <div>
+            <h3>{{ section.title }}</h3>
+            @if (section.description) {
+              <p>{{ section.description }}</p>
+            }
+          </div>
+        </header>
+        <div class="general-anomalies">
+          @for (item of section.items; track item.title + (item.value ?? '')) {
+            <article class="general-anomaly" [class]="toneClass(item.tone)">
+              <span>{{ item.title }}</span>
+              <strong>{{ item.value }}</strong>
+            </article>
+          }
+        </div>
+      </article>
+    }
+  </div>
+</section>

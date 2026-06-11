@@ -1,0 +1,14 @@
+<section class="panel-control-page">
+  <p class="error" *ngIf="dashboardService.error()">{{ dashboardService.error() }}</p>
+  <p class="muted panel-loading" *ngIf="dashboardService.loading()">Cargando panel de control...</p>
+
+  @if (dashboardService.panel(); as panel) {
+    @if (isAuditMode() || panel.panel_type === 'audit') {
+      <app-audit-panel-view [panel]="panel" />
+    } @else if (panel.panel_type === 'general') {
+      <app-general-panel-view [panel]="panel" />
+    } @else {
+      <app-dashboard-panel-view [panel]="panel" />
+    }
+  }
+</section>

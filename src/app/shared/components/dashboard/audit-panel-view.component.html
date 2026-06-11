@@ -1,0 +1,174 @@
+<section class="audit-panel">
+  <header class="audit-hero panel">
+    <div>
+      <span class="eyebrow">Panel de Control</span>
+      <h1>{{ panel().title }}</h1>
+      <p>{{ panel().subtitle }}</p>
+    </div>
+    <span class="audit-badge">Auditoría</span>
+  </header>
+
+  <app-dashboard-metric-grid [metrics]="panel().metrics" />
+
+  <div class="audit-charts">
+    @if (chartByKey('actions_by_user'); as chart) {
+      <article class="audit-chart-card panel">
+        <header>
+          <h3>{{ chart.title }}</h3>
+          @if (chart.description) {
+            <p>{{ chart.description }}</p>
+          }
+        </header>
+        <app-dashboard-bar-chart [points]="chart.points" />
+      </article>
+    }
+
+    @if (chartByKey('actions_by_resource'); as chart) {
+      <article class="audit-chart-card panel">
+        <header>
+          <h3>{{ chart.title }}</h3>
+          @if (chart.description) {
+            <p>{{ chart.description }}</p>
+          }
+        </header>
+        <app-dashboard-donut-chart [points]="chart.points" />
+      </article>
+    }
+
+    @if (chartByKey('actions_by_category'); as chart) {
+      <article class="audit-chart-card panel audit-chart-card--wide">
+        <header>
+          <h3>{{ chart.title }}</h3>
+          @if (chart.description) {
+            <p>{{ chart.description }}</p>
+          }
+        </header>
+        <app-dashboard-bar-chart [points]="chart.points" />
+      </article>
+    }
+  </div>
+
+  <div class="audit-main-grid">
+    @if (traceabilitySection(); as section) {
+      <article class="audit-card panel audit-card--timeline">
+        <header class="audit-card__head">
+          <div>
+            <h3>{{ section.title }}</h3>
+            @if (section.description) {
+              <p>{{ section.description }}</p>
+            }
+          </div>
+        </header>
+
+        <div class="audit-timeline">
+          @for (item of section.items; track item.title + (item.meta ?? '') + (item.subtitle ?? '')) {
+            <article class="audit-timeline__item" [class]="timelineToneClass(item.tone)">
+              <div class="audit-timeline__rail" aria-hidden="true"></div>
+              <div class="audit-timeline__body">
+                <div class="audit-timeline__top">
+                  <strong>{{ item.title }}</strong>
+                  @if (item.meta) {
+                    <time>{{ item.meta }}</time>
+                  }
+                </div>
+                @if (item.subtitle) {
+                  <p class="audit-timeline__user">{{ item.subtitle }}</p>
+                }
+                <div class="audit-timeline__tags">
+                  @if (item.badge) {
+                    <span class="audit-tag audit-tag--category">{{ item.badge }}</span>
+                  }
+                  @if (item.value) {
+                    <span class="audit-tag audit-tag--resource">{{ item.value }}</span>
+                  }
+                </div>
+              </div>
+            </article>
+          } @empty {
+            <p class="audit-empty">Sin eventos de trazabilidad.</p>
+          }
+        </div>
+      </article>
+    }
+
+    <div class="audit-side-stack">
+      @if (anomaliesSection(); as section) {
+        <article class="audit-card panel">
+          <header class="audit-card__head">
+            <div>
+              <h3>{{ section.title }}</h3>
+              @if (section.description) {
+                <p>{{ section.description }}</p>
+              }
+            </div>
+          </header>
+          <div class="audit-list">
+            @for (item of section.items; track item.title + (item.subtitle ?? '')) {
+              <article class="audit-list__item" [class]="toneClass(item.tone)">
+                <strong>{{ item.title }}</strong>
+                @if (item.subtitle) {
+                  <small>{{ item.subtitle }}</small>
+                }
+                @if (item.badge) {
+                  <span class="audit-tag audit-tag--category">{{ item.badge }}</span>
+                }
+              </article>
+            }
+          </div>
+        </article>
+      }
+
+      @if (coverageSection(); as section) {
+        <article class="audit-card panel">
+          <header class="audit-card__head">
+            <div>
+              <h3>{{ section.title }}</h3>
+              @if (section.description) {
+                <p>{{ section.description }}</p>
+              }
+            </div>
+          </header>
+          <div class="audit-coverage">
+            @for (item of section.items; track item.title) {
+              <div class="audit-coverage__row">
+                <span>{{ item.title }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  </div>
+
+  @if (flowSection(); as section) {
+    <article class="audit-card panel">
+      <header class="audit-card__head">
+        <div>
+          <h3>{{ section.title }}</h3>
+          @if (section.description) {
+            <p>{{ section.description }}</p>
+          }
+        </div>
+      </header>
+      <div class="audit-flow-grid">
+        @for (item of section.items; track item.title + (item.subtitle ?? '')) {
+          <article class="audit-flow-card">
+            <div class="audit-flow-card__top">
+              <strong>{{ item.title }}</strong>
+              @if (item.value) {
+                <span class="audit-tag audit-tag--status">{{ item.value }}</span>
+              }
+            </div>
+            @if (item.subtitle) {
+              <p>{{ item.subtitle }}</p>
+            }
+            @if (item.meta) {
+              <small>Actualizado: {{ item.meta }}</small>
+            }
+          </article>
+        }
+      </div>
+    </article>
+  }
+</section>

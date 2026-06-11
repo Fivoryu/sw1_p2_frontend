@@ -1,0 +1,267 @@
+<div class="gh-repo">
+  <header class="gh-repo__header">
+    <div class="gh-repo__title-row">
+      <span class="gh-repo__icon" aria-hidden="true">📁</span>
+      <div>
+        <h2>
+          <span class="gh-repo__owner">expediente</span>
+          <span class="gh-repo__slash">/</span>
+          <span class="gh-repo__name">{{ repositoryCode() || 'repositorio' }}</span>
+        </h2>
+        <p class="gh-repo__desc">
+          Repositorio documental
+          <ng-container *ngIf="activityName()"> · actividad: {{ activityName() }}</ng-container>
+        </p>
+      </div>
+      <span class="gh-repo__badge">Privado</span>
+    </div>
+
+    <div class="gh-repo__stats">
+      <span><strong>{{ visibleDocuments().length }}</strong> archivos</span>
+      <span><strong>{{ formatFileSize(totalBytes()) }}</strong></span>
+      <span><strong>{{ historyEntries().length }}</strong> versiones</span>
+    </div>
+  </header>
+
+  <nav class="gh-repo__nav">
+    <button type="button" class="gh-repo__nav-item" [class.is-active]="repoSection() === 'files'" (click)="setSection('files')">
+      Archivos
+    </button>
+    <button type="button" class="gh-repo__nav-item" [class.is-active]="repoSection() === 'history'" (click)="setSection('history')">
+      Historial
+    </button>
+  </nav>
+
+  <div class="gh-repo__toolbar" *ngIf="repoSection() === 'files'">
+    <div class="gh-repo__branch" *ngIf="dualRepository()">
+      <button type="button" [class.is-active]="activeTab() === 'tramite'" (click)="setTab('tramite')">
+        expediente/tramite
+      </button>
+      <button type="button" [class.is-active]="activeTab() === 'actividad'" (click)="setTab('actividad')">
+        actividad/{{ activityName() || 'actual' }}
+      </button>
+    </div>
+    <div class="gh-repo__branch gh-repo__branch--single" *ngIf="!dualRepository()">
+      <span>rama principal</span>
+    </div>
+
+    <div class="gh-repo__toolbar-actions">
+      <button type="button" class="ghost gh-repo__btn" *ngIf="canWrite()" (click)="toggleUploadPanel()">
+        {{ showUploadPanel() ? 'Cancelar' : 'Agregar archivo' }}
+      </button>
+    </div>
+  </div>
+
+  <section class="gh-repo__upload" *ngIf="repoSection() === 'files' && canWrite() && showUploadPanel()">
+    <form class="gh-repo__upload-form" (ngSubmit)="submitUpload()">
+      <div class="gh-repo__dropzone" [class.gh-repo__dropzone--active]="dragOver()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+        <label class="gh-repo__file-picker">
+          <input type="file" (change)="onPrimaryFileChange($event)" />
+          Elegir archivo o arrastrar aquí
+        </label>
+        <small *ngIf="selectedFile() as file">{{ file.name }} · {{ formatFileSize(file.size) }}</small>
+      </div>
+      <div class="gh-repo__upload-fields">
+        <input [ngModel]="documentName()" (ngModelChange)="documentName.set($event)" name="documentName" placeholder="Nombre del documento" />
+        <input [ngModel]="documentComment()" (ngModelChange)="documentComment.set($event)" name="documentComment" placeholder="Mensaje del cambio (commit)" />
+        <button type="submit" [disabled]="!selectedFile() || uploading()">
+          {{ uploading() ? 'Subiendo...' : 'Confirmar carga' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <ng-container *ngIf="repoSection() === 'files'">
+    <div class="gh-repo__empty" *ngIf="!visibleDocuments().length">
+      <strong>Este repositorio está vacío</strong>
+      <p>Carga la solicitud inicial, respaldos o evidencias para iniciar el historial.</p>
+      <button type="button" *ngIf="canWrite()" (click)="toggleUploadPanel()">Agregar primer archivo</button>
+    </div>
+
+    <div class="gh-repo__file-table" *ngIf="visibleDocuments().length">
+      <div class="gh-repo__file-head">
+        <span>Nombre</span>
+        <span>Último cambio</span>
+        <span>Versión</span>
+        <span>Fecha</span>
+        <span></span>
+      </div>
+      <div
+        class="gh-repo__file-row"
+        *ngFor="let document of visibleDocuments()"
+        [class.is-selected]="previewDocument()?.id === document.id"
+      >
+        <button type="button" class="gh-repo__file-open" (click)="openPreviewModal(document)">
+          <span class="gh-repo__file-name">
+            <span class="gh-repo__kind gh-repo__kind--{{ mimeTypeKind(document.mimeType) }}">{{ fileKindLabel(mimeTypeKind(document.mimeType)) }}</span>
+            {{ document.fileName || document.name }}
+          </span>
+          <span class="gh-repo__muted">{{ document.comment || document.uploadedByName }}</span>
+          <span class="gh-repo__version">v{{ document.version }}</span>
+          <span class="gh-repo__muted">{{ document.uploadedAtLabel }}</span>
+        </button>
+        <div class="gh-repo__row-actions">
+          <button type="button" class="ghost gh-repo__history-btn" *ngIf="isEditableText(document) && canWrite()" (click)="openEditor.emit(document); $event.stopPropagation()">Editar</button>
+          <button type="button" class="ghost gh-repo__history-btn" (click)="openHistoryForDocument(document, $event)">Historial</button>
+          <button type="button" class="ghost gh-repo__history-btn" *ngIf="canAdminDocuments()" (click)="openPermissions(document, $event)">Permisos</button>
+        </div>
+        <form class="gh-repo__version-form" *ngIf="canWrite()" (click)="$event.stopPropagation()" (ngSubmit)="submitVersion(document, $event)">
+          <label>
+            Nueva versión
+            <input type="file" (change)="onVersionFileChange(document, $event)" />
+          </label>
+          <input
+            [ngModel]="versionCommentByDocument()[document.id] || ''"
+            (ngModelChange)="setVersionComment(document.id, $event)"
+            name="versionComment-{{ document.id }}"
+            placeholder="Comentario de versión"
+          />
+          <button type="submit" [disabled]="!versionFileByDocument()[document.id] || uploading()">Subir versión</button>
+        </form>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="repoSection() === 'history'">
+    <section class="gh-repo__history-intro">
+      <strong>Historial de modificaciones</strong>
+      <p>Registro completo de versiones: quién cambió cada documento, cuándo y en qué contexto (trámite o actividad).</p>
+    </section>
+
+    <div class="gh-repo__history-filter" *ngIf="historyDocumentFilterId()">
+      <span>Filtrando por: <strong>{{ historyFilterDocumentName() }}</strong></span>
+      <button type="button" class="ghost" (click)="clearHistoryFilter()">Ver todo el historial</button>
+    </div>
+
+    <div class="gh-repo__empty" *ngIf="!displayedHistoryEntries().length">
+      <strong>Sin versiones registradas</strong>
+      <p>Carga documentos para generar el historial de cambios.</p>
+    </div>
+
+    <ng-container *ngIf="displayedHistoryEntries().length">
+      <ng-container *ngTemplateOutlet="historyTable; context: { entries: displayedHistoryEntries() }"></ng-container>
+    </ng-container>
+  </ng-container>
+</div>
+
+<div
+  class="modal-backdrop doc-preview-backdrop"
+  *ngIf="previewDocument() as document"
+  (click)="closePreview()"
+>
+  <div
+    class="doc-preview-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="doc-preview-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="doc-preview-modal__header">
+      <div class="doc-preview-modal__heading">
+        <span class="doc-preview-modal__eyebrow">Vista previa</span>
+        <h3 id="doc-preview-title">{{ document.fileName || document.name }}</h3>
+        <p class="doc-preview-modal__subtitle">
+          {{ mimeTypeLabel(document.mimeType) }} · v{{ document.version }} · {{ formatFileSize(document.sizeBytes) }}
+          · {{ document.uploadedByName }}
+        </p>
+        <div class="doc-presence" *ngIf="documentCollab.presenceUsers().length">
+          <span class="doc-presence__status" [class.is-online]="documentCollab.isConnected()"></span>
+          <strong>{{ documentCollab.presenceUsers().length }}</strong> usuario(s) viendo
+          <span class="doc-presence__avatar" *ngFor="let user of documentCollab.presenceUsers()" [title]="user.user_name">
+            {{ user.user_name.slice(0, 1).toUpperCase() }}
+          </span>
+        </div>
+      </div>
+      <button type="button" class="entity-modal__close" aria-label="Cerrar vista previa" (click)="closePreview()">×</button>
+    </header>
+
+    <div class="doc-preview-modal__body">
+      <app-document-preview-view
+        [documentId]="document.id"
+        [fileName]="document.fileName || document.name"
+        [mimeType]="document.mimeType"
+        [compact]="true"
+      />
+
+      <section class="doc-comments">
+        <div class="doc-comments__head">
+          <strong>Comentarios</strong>
+          <span>{{ previewComments().length }} registro(s)</span>
+        </div>
+        <div class="doc-comments__composer" *ngIf="canWrite()">
+          <textarea [ngModel]="commentDraft()" (ngModelChange)="commentDraft.set($event)" rows="3" placeholder="Escribe una observación para este documento"></textarea>
+          <button type="button" (click)="submitComment()">Comentar</button>
+        </div>
+        <div class="doc-comments__empty" *ngIf="!previewComments().length">Sin comentarios todavía.</div>
+        <article class="doc-comments__item" *ngFor="let item of previewComments()">
+          <div class="doc-comments__meta">
+            <strong>{{ item.authorName }}</strong>
+            <span>{{ item.authorRole }}</span>
+            <small>{{ item.createdAtLabel }}</small>
+          </div>
+          <p>{{ item.comment }}</p>
+        </article>
+      </section>
+    </div>
+
+    <footer class="doc-preview-modal__footer">
+      <button type="button" class="entity-modal__btn entity-modal__btn--secondary" (click)="closePreview()">Cerrar</button>
+      <button type="button" class="entity-modal__btn entity-modal__btn--secondary" (click)="downloadPreviewDocument()">Descargar</button>
+      <button type="button" class="entity-modal__btn entity-modal__btn--primary" (click)="openEditorFromPreview()" *ngIf="isEditableText(document)">Editar</button>
+      <button type="button" class="entity-modal__btn entity-modal__btn--primary" (click)="openFullPreview()">Pantalla completa</button>
+    </footer>
+  </div>
+</div>
+
+<ng-template #historyTable let-entries="entries">
+  <div class="gh-repo__history-table">
+    <div class="gh-repo__history-head">
+      <span>Documento</span>
+      <span>Versión</span>
+      <span>Usuario</span>
+      <span>Fecha y hora</span>
+      <span>Tipo</span>
+      <span>Comentario</span>
+      <span>Archivo</span>
+      <span>Estado</span>
+      <span>Relación</span>
+      <span>Acciones</span>
+    </div>
+    <article class="gh-repo__history-row" *ngFor="let entry of entries">
+      <span>
+        <button type="button" class="gh-repo__doc-link" (click)="openPreviewFromHistory(entry)">
+          {{ entry.documentName }}
+        </button>
+      </span>
+      <span>v{{ entry.version.version }}</span>
+      <span>{{ entry.version.uploadedByName }}</span>
+      <span>{{ entry.version.uploadedAtLabel }}</span>
+      <span>{{ changeTypeLabel(entry.version.changeType) }}</span>
+      <span>{{ entry.version.comment || '—' }}</span>
+      <span>{{ entry.version.fileName }}</span>
+      <span class="gh-repo__status" [class.gh-repo__status--current]="entry.status === 'Vigente'">{{ entry.status }}</span>
+      <span>{{ scopeLabel(entry.documentScope) }}</span>
+      <span>
+        <button type="button" class="ghost gh-repo__history-btn" (click)="openSpecificVersion(entry)">Abrir</button>
+        <button type="button" class="ghost gh-repo__history-btn" *ngIf="canCompareEntry(entry)" (click)="openCompare(entry)">Comparar</button>
+        <button type="button" class="ghost gh-repo__history-btn" *ngIf="canSign()" (click)="requestSignature(entry)">Firmar</button>
+        <button type="button" class="ghost gh-repo__history-btn" *ngIf="canValidateSignature()" (click)="requestValidation(entry)">Validar</button>
+      </span>
+    </article>
+  </div>
+</ng-template>
+
+<app-document-version-compare
+  *ngIf="compareDocument() as document"
+  [documentId]="document.id"
+  [documentName]="document.name"
+  [versions]="compareVersions()"
+  (close)="closeCompare()"
+/>
+
+<app-document-permissions-modal
+  *ngIf="permissionsDocument() as document"
+  [documentId]="document.id"
+  [documentName]="document.name"
+  (close)="closePermissions()"
+/>

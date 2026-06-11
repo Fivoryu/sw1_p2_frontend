@@ -1,0 +1,203 @@
+<section class="workflow-page">
+  <header class="workflow-header">
+    <div class="workflow-intro">
+      <span class="eyebrow">Seguimiento</span>
+      <h1>Mis trámites</h1>
+      <p>Consulta en qué etapa va cada trámite, quién lo atiende y qué pasos faltan.</p>
+    </div>
+
+    <div class="metrics-row" *ngIf="statusCards().length">
+      <article class="metric-card" *ngFor="let metric of statusCards()">
+        <span>{{ metric.label }}</span>
+        <strong>{{ metric.value }}</strong>
+        <small>{{ metric.hint }}</small>
+      </article>
+    </div>
+  </header>
+
+  <p class="error" *ngIf="workflowService.loadingError()">{{ workflowService.loadingError() }}</p>
+
+  <section class="cases-layout">
+    <aside class="panel cases-panel">
+      <div class="cases-panel-head">
+        <div>
+          <h2>Tus trámites</h2>
+          <p class="muted">Elige uno para ver su detalle.</p>
+        </div>
+        <span class="count-badge">{{ filteredCases().length }}</span>
+      </div>
+
+      <div class="cases-filters">
+        <label class="search-field">
+          <span class="sr-only">Buscar trámite</span>
+          <input
+            [ngModel]="searchTerm()"
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Buscar por código, política o etapa"
+          />
+        </label>
+
+        <label class="filter-field">
+          <span>Estado</span>
+          <select [ngModel]="statusFilter()" (ngModelChange)="onStatusChange($event)">
+            <option value="all">Todos</option>
+            <option value="activo">Activo</option>
+            <option value="en_revision">En revisión</option>
+            <option value="por_iniciar">Por iniciar</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="cases-empty" *ngIf="!filteredCases().length && !workflowService.loading()">
+        <strong>Sin trámites todavía</strong>
+        <p>Inicia uno desde el catálogo de políticas y aparecerá aquí.</p>
+      </div>
+
+      <div class="cases-list" *ngIf="filteredCases().length">
+        <button
+          type="button"
+          class="case-card"
+          *ngFor="let item of filteredCases()"
+          [class.case-card--selected]="selectedCaseId() === item.id"
+          (click)="selectCase(item.id)"
+        >
+          <div class="case-card-top">
+            <span class="case-code">{{ item.processCode }}</span>
+            <div>
+              <span [class]="statusBadgeClass(item.status)">{{ statusLabel(item.status) }}</span>
+              <span [class]="riskBadgeClass(item.riskLevel)">{{ riskLabel(item.riskLevel) }}</span>
+            </div>
+          </div>
+
+          <strong class="case-title">{{ item.policyName }}</strong>
+          <p class="case-stage">{{ item.currentStage }}</p>
+
+          <div class="case-card-foot">
+            <span>{{ item.currentDepartment }}</span>
+            <span>{{ item.progress }}%</span>
+          </div>
+
+          <div class="case-card-progress" aria-hidden="true">
+            <span [style.width.%]="item.progress"></span>
+          </div>
+        </button>
+      </div>
+    </aside>
+
+    <article class="panel detail-panel" *ngIf="selectedCase() as item; else emptyDetail">
+      <header class="detail-hero">
+        <div>
+          <span class="case-code">{{ item.processCode }}</span>
+          <h2>{{ item.policyName }}</h2>
+          <p>{{ item.milestone }}</p>
+        </div>
+        <span [class]="statusBadgeClass(item.status)">{{ statusLabel(item.status) }}</span>
+      </header>
+
+      <section class="detail-summary">
+        <div class="summary-progress">
+          <div class="progress-head">
+            <strong>Avance general</strong>
+            <span>{{ item.progress }}%</span>
+          </div>
+          <div [class]="progressTone()">
+            <span [style.width.%]="item.progress"></span>
+          </div>
+        </div>
+
+        <dl class="summary-grid">
+          <div>
+            <dt>Etapa actual</dt>
+            <dd>{{ item.currentStage }}</dd>
+          </div>
+          <div>
+            <dt>Departamento</dt>
+            <dd>{{ item.currentDepartment }}</dd>
+          </div>
+          <div>
+            <dt>Responsable</dt>
+            <dd>{{ item.ownerName }}</dd>
+          </div>
+          <div>
+            <dt>Última actualización</dt>
+            <dd>{{ item.updatedAtLabel }}</dd>
+          </div>
+          <div>
+            <dt>Riesgo</dt>
+            <dd>{{ riskLabel(item.riskLevel) }}</dd>
+          </div>
+        </dl>
+
+        <div class="launch-note" *ngIf="item.anomalyFlags?.length">
+          <strong>Anomalías detectadas</strong>
+          <p>{{ item.anomalyFlags?.join(' · ') }}</p>
+        </div>
+      </section>
+
+      <section class="detail-section" *ngIf="routeStages().length">
+        <div class="section-head">
+          <h3>Etapas del trámite</h3>
+          <p class="muted">Recorrido previsto y punto en el que va ahora.</p>
+        </div>
+
+        <ol class="stage-route">
+          <li
+            class="stage-step"
+            *ngFor="let stage of routeStages()"
+            [class]="'stage-step stage-step--' + stage.state"
+          >
+            <div class="stage-marker">{{ stage.order }}</div>
+            <div class="stage-content">
+              <div class="stage-top">
+                <strong>{{ stage.label }}</strong>
+                <span class="stage-state">{{ stageStateLabel(stage.state) }}</span>
+              </div>
+              <span class="stage-dept">{{ stage.departmentName }}</span>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="detail-section" *ngIf="timelineTasks().length">
+        <div class="section-head">
+          <h3>Actividad reciente</h3>
+          <p class="muted">Tareas generadas durante la ejecución de este trámite.</p>
+        </div>
+
+        <div class="activity-list">
+          <article class="activity-item" *ngFor="let task of timelineTasks()">
+            <div>
+              <strong>{{ task.taskName }}</strong>
+              <p>{{ task.nextAction }}</p>
+            </div>
+            <div class="activity-meta">
+              <span [class]="taskStatusClass(task.status)">{{ taskStatusLabel(task.status) }}</span>
+              <small>{{ task.createdAtLabel }}</small>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="detail-section" *ngIf="workflowService.canReadDocuments() && selectedCase() as selected">
+        <div class="section-head">
+          <h3>Repositorio documental</h3>
+          <p class="muted">Expediente completo del trámite con control de versiones.</p>
+        </div>
+        <a class="cases-repo-link" [routerLink]="['/workflow/tramites', selected.id, 'repositorio']">
+          Abrir repositorio · {{ selected.processCode }}
+        </a>
+      </section>
+
+      <p class="detail-loading muted" *ngIf="workflowService.loading() && !selectedInstanceDetail()">
+        Cargando detalle del trámite...
+      </p>
+    </article>
+
+    <ng-template #emptyDetail>
+      <article class="panel detail-panel detail-panel--empty">
+        <strong>Selecciona un trámite</strong>
+        <p>Cuando tengas trámites activos, el detalle aparecerá en este panel.</p>
+      </article>
+    </ng-template>
+  </section>
+</section>

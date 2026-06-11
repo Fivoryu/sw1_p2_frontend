@@ -1,0 +1,227 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Gestión administrativa</span>
+      <h2>Usuarios</h2>
+      <p>Administra cuentas con filtros operativos y acciones rápidas para el equipo.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="secondary" (click)="reload()">Recargar</button>
+      <button type="button" class="create-button" [disabled]="!canWrite()" (click)="openCreateModal()">
+        <span class="plus-icon">+</span>
+        <span>Nuevo usuario</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <span>Total</span>
+      <strong>{{ users().length }}</strong>
+      <small>usuarios registrados</small>
+    </article>
+    <article class="stat-card accent-green">
+      <span>Activos</span>
+      <strong>{{ activeUsersCount() }}</strong>
+      <small>cuentas habilitadas</small>
+    </article>
+    <article class="stat-card accent-red">
+      <span>Inactivos</span>
+      <strong>{{ inactiveUsersCount() }}</strong>
+      <small>cuentas desactivadas</small>
+    </article>
+  </section>
+
+  <div class="panel list-panel users-panel">
+    <div class="toolbar">
+      <div class="toolbar-title">
+        <h3>Listado de usuarios</h3>
+        <p>{{ filteredUsers().length }} resultado(s)</p>
+      </div>
+
+      <div class="filters-grid" [formGroup]="filtersForm">
+        <label class="filter-field search-field">
+          <span>Buscar</span>
+          <input
+            [value]="searchTerm()"
+            (input)="setSearchTerm($any($event.target).value)"
+            placeholder="Nombre o correo"
+          />
+        </label>
+
+        <label class="filter-field">
+          <span>Rol</span>
+          <app-custom-select
+            formControlName="role"
+            [options]="roleFilterOptions()"
+            ariaLabel="Filtrar por rol"
+          />
+        </label>
+
+        <label class="filter-field">
+          <span>Departamento</span>
+          <app-custom-select
+            formControlName="department"
+            [options]="departmentFilterOptions()"
+            ariaLabel="Filtrar por departamento"
+          />
+        </label>
+
+        <label class="filter-field">
+          <span>Estado</span>
+          <app-custom-select
+            formControlName="status"
+            [options]="statusFilterOptions"
+            ariaLabel="Filtrar por estado"
+          />
+        </label>
+
+        <button type="button" class="ghost clear-button" (click)="clearFilters()">Limpiar</button>
+      </div>
+    </div>
+
+    <p *ngIf="loading()">Cargando usuarios...</p>
+
+    <div class="table-wrapper" *ngIf="!loading()">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th>Departamento</th>
+            <th>Estado</th>
+            <th>Actualización</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of filteredUsers()">
+            <td>
+              <div class="user-cell">
+                <div class="avatar-pill">{{ user.full_name.charAt(0) }}</div>
+                <div>
+                  <strong>{{ user.full_name }}</strong>
+                  <small>{{ user.email }}</small>
+                </div>
+              </div>
+            </td>
+            <td>{{ user.role_name }}</td>
+            <td>{{ user.department_name || 'Sin departamento' }}</td>
+            <td>
+              <span class="badge" [class.inactive]="!user.is_active">{{ user.is_active ? 'Activo' : 'Inactivo' }}</span>
+            </td>
+            <td>{{ user.updated_at | date:'short' }}</td>
+            <td class="actions-cell">
+              <button type="button" class="ghost" (click)="startEdit(user)">Editar</button>
+              <button type="button" class="ghost danger" [disabled]="!canWrite() || !user.is_active" (click)="deactivate(user)">
+                Desactivar
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!filteredUsers().length">
+            <td colspan="6">
+              <div class="empty-state">
+                <strong>No hay usuarios que coincidan con el filtro.</strong>
+                <small>Ajusta la búsqueda o limpia los filtros para ver más resultados.</small>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="modalOpen()" (click)="closeModal()">
+    <div
+      class="entity-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="user-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <form class="entity-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+        <header class="entity-modal__header">
+          <div class="entity-modal__heading">
+            <span class="entity-modal__eyebrow">{{ editingUserId() ? 'Edición' : 'Alta' }}</span>
+            <h3 id="user-modal-title">{{ editingUserId() ? 'Editar usuario' : 'Crear usuario' }}</h3>
+            <p class="entity-modal__subtitle">
+              {{
+                editingUserId()
+                  ? 'Actualiza los datos de la cuenta. Deja la contraseña vacía si no deseas cambiarla.'
+                  : 'Completa los datos para registrar una nueva cuenta en el sistema.'
+              }}
+            </p>
+          </div>
+          <button type="button" class="entity-modal__close" aria-label="Cerrar" (click)="closeModal()">×</button>
+        </header>
+
+        <div class="entity-modal__body">
+          <div class="entity-modal__grid">
+            <label class="entity-modal__field">
+              <span>Nombre completo</span>
+              <input formControlName="full_name" placeholder="Ej. María López" autocomplete="name" />
+            </label>
+
+            <label class="entity-modal__field">
+              <span>Email</span>
+              <input
+                type="email"
+                formControlName="email"
+                placeholder="correo@empresa.com"
+                autocomplete="email"
+              />
+            </label>
+
+            <label class="entity-modal__field">
+              <span>Contraseña {{ editingUserId() ? '(opcional)' : '' }}</span>
+              <input
+                type="password"
+                formControlName="password"
+                placeholder="{{ editingUserId() ? 'Dejar vacío para no cambiar' : 'Mínimo 8 caracteres' }}"
+                autocomplete="new-password"
+              />
+            </label>
+
+            <label class="entity-modal__field">
+              <span>Rol</span>
+              <app-custom-select
+                formControlName="role_id"
+                [options]="roleFormOptions()"
+                placeholder="Seleccionar rol"
+                ariaLabel="Rol del usuario"
+                [compact]="true"
+              />
+            </label>
+
+            <label class="entity-modal__field entity-modal__field--wide">
+              <span>Departamento</span>
+              <app-custom-select
+                formControlName="department_id"
+                [options]="departmentFormOptions()"
+                placeholder="Sin departamento"
+                ariaLabel="Departamento del usuario"
+                [compact]="true"
+              />
+            </label>
+          </div>
+
+          <label class="entity-modal__permission">
+            <input type="checkbox" formControlName="is_active" />
+            <span>Usuario activo</span>
+          </label>
+        </div>
+
+        <p class="entity-modal__error" *ngIf="error()">{{ error() }}</p>
+
+        <footer class="entity-modal__footer">
+          <button type="button" class="entity-modal__btn entity-modal__btn--secondary" (click)="closeModal()">
+            Cancelar
+          </button>
+          <button type="submit" class="entity-modal__btn entity-modal__btn--primary" [disabled]="!canWrite() || saving()">
+            {{ saving() ? 'Guardando...' : editingUserId() ? 'Actualizar usuario' : 'Crear usuario' }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,170 @@
+<section class="inbox-page">
+  <header class="inbox-hero panel">
+    <div class="inbox-hero-copy">
+      <span class="eyebrow">Centro de tareas</span>
+      <h1>Bandeja de trabajo</h1>
+      <p>
+        Cola operativa de <strong>{{ departmentName() }}</strong>.
+        Reclama tareas del pool o continúa las que ya tienes asignadas.
+      </p>
+    </div>
+
+    <div class="inbox-stats">
+      <article class="stat-pill stat-pill--mine">
+        <span>Mis tareas</span>
+        <strong>{{ queueCounts().mine }}</strong>
+      </article>
+      <article class="stat-pill stat-pill--pool">
+        <span>Disponibles</span>
+        <strong>{{ queueCounts().pool }}</strong>
+      </article>
+      <article class="stat-pill">
+        <span>Total cola</span>
+        <strong>{{ queueCounts().all }}</strong>
+      </article>
+    </div>
+  </header>
+
+  <p class="error" *ngIf="workflowService.loadingError()">{{ workflowService.loadingError() }}</p>
+
+  <section class="inbox-workspace panel">
+    <div class="queue-tabs" role="tablist" aria-label="Colas de trabajo">
+      <button
+        type="button"
+        role="tab"
+        class="queue-tab"
+        [class.queue-tab--active]="queueFilter() === 'mine'"
+        [attr.aria-selected]="queueFilter() === 'mine'"
+        (click)="setQueue('mine')"
+      >
+        Mis tareas
+        <span class="queue-tab-count">{{ queueCounts().mine }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="queue-tab"
+        [class.queue-tab--active]="queueFilter() === 'pool'"
+        [attr.aria-selected]="queueFilter() === 'pool'"
+        (click)="setQueue('pool')"
+      >
+        Pool del departamento
+        <span class="queue-tab-count">{{ queueCounts().pool }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="queue-tab"
+        [class.queue-tab--active]="queueFilter() === 'all'"
+        [attr.aria-selected]="queueFilter() === 'all'"
+        (click)="setQueue('all')"
+      >
+        Todas
+        <span class="queue-tab-count">{{ queueCounts().all }}</span>
+      </button>
+    </div>
+
+    <div class="inbox-toolbar">
+      <label class="toolbar-search">
+        <span class="sr-only">Buscar tareas</span>
+        <input
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearchChange($event)"
+          placeholder="Buscar trámite, tarea, política o solicitante"
+        />
+      </label>
+
+      <label class="toolbar-filter">
+        <span>Estado</span>
+        <select [ngModel]="statusFilter()" (ngModelChange)="onStatusChange($event)">
+          <option value="all">Todos</option>
+          <option value="nueva">Nueva</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="reclamada">Reclamada</option>
+          <option value="en_progreso">En progreso</option>
+        </select>
+      </label>
+
+      <label class="toolbar-filter">
+        <span>Prioridad</span>
+        <select [ngModel]="priorityFilter()" (ngModelChange)="onPriorityChange($event)">
+          <option value="all">Todas</option>
+          <option value="alta">Alta</option>
+          <option value="media">Media</option>
+          <option value="baja">Baja</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="queue-empty" *ngIf="!filteredTasks().length && !workflowService.loading()">
+      <strong>Sin resultados en esta cola</strong>
+      <p>{{ emptyQueueMessage() }}</p>
+    </div>
+
+    <div class="table-wrapper" *ngIf="filteredTasks().length">
+      <table class="task-queue">
+        <thead>
+          <tr>
+            <th>Tarea</th>
+            <th>Trámite</th>
+            <th>Proceso</th>
+            <th>Solicitante</th>
+            <th>Prioridad</th>
+            <th>IA</th>
+            <th>Estado</th>
+            <th>Asignación</th>
+            <th aria-label="Acción"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let task of filteredTasks()"
+            class="task-row"
+            [class.task-row--mine]="task.assignedUserId === workflowService.currentUserId()"
+            [class.task-row--pool]="!task.assignedUserId"
+            tabindex="0"
+            (click)="openTask(task.id)"
+            (keydown.enter)="openTask(task.id)"
+          >
+            <td class="task-cell">
+              <strong>{{ task.taskName }}</strong>
+              <small>{{ task.summary }}</small>
+            </td>
+            <td>
+              <span class="process-code">{{ task.processCode }}</span>
+            </td>
+            <td>{{ task.policyName }}</td>
+            <td>{{ task.requesterName }}</td>
+            <td>
+              <span [class]="priorityClass(task.priority)">{{ task.priority | titlecase }}</span>
+            </td>
+            <td>
+              <span [class]="aiPriorityClass(task)">{{ aiPriorityLabel(task) }}</span>
+              <span class="risk-badge" *ngIf="task.delayRiskLevel"
+                    [class.risk-bajo]="task.delayRiskLevel === 'bajo'"
+                    [class.risk-medio]="task.delayRiskLevel === 'medio'"
+                    [class.risk-alto]="task.delayRiskLevel === 'alto'"
+                    [title]="'Riesgo: ' + task.delayRiskLevel + ' (' + task.delayRiskScore + '/100)'">
+                {{ task.delayRiskLevel }}
+              </span>
+              <small class="ai-hint" *ngIf="task.routeRecommendation?.recommended_user_name">
+                Ruta: {{ task.routeRecommendation?.recommended_user_name }}
+              </small>
+            </td>
+            <td>
+              <span [class]="statusClass(task.status)">{{ statusLabel(task.status) }}</span>
+            </td>
+            <td>
+              <span [class]="assignmentClass(task)">{{ assignmentLabel(task) }}</span>
+            </td>
+            <td class="action-cell">
+              <button type="button" class="ghost row-action" (click)="openTask(task.id); $event.stopPropagation()">
+                {{ actionLabel(task) }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>

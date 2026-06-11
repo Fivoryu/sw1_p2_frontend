@@ -1,0 +1,203 @@
+<section class="workflow-page">
+  <header class="workflow-header workflow-header--catalog">
+    <div class="workflow-header__copy">
+      <span class="eyebrow">Inicio de trámites</span>
+      <h1>Catálogo de políticas publicadas</h1>
+      <p>Elige un proceso listo para ejecutar o describe tu solicitud para que el asistente te oriente a la política más adecuada.</p>
+    </div>
+
+    <div class="workflow-header__stats">
+      <article class="hero-stat">
+        <span>Políticas activas</span>
+        <strong>{{ totalPolicies() }}</strong>
+      </article>
+      <article class="hero-stat">
+        <span>Pasos promedio</span>
+        <strong>{{ avgSteps() }}</strong>
+      </article>
+      <article class="hero-stat">
+        <span>Formularios listos</span>
+        <strong>{{ totalForms() }}</strong>
+      </article>
+    </div>
+  </header>
+
+  <p class="error" *ngIf="workflowService.loadingError()">{{ workflowService.loadingError() }}</p>
+  <p class="error" *ngIf="workflowService.createError()">{{ workflowService.createError() }}</p>
+  <p class="badge" *ngIf="workflowService.lastStartedCaseCode()">
+    Trámite iniciado: {{ workflowService.lastStartedCaseCode() }}
+  </p>
+
+  <section class="catalog-command panel">
+    <div class="catalog-command__left">
+      <label class="search-field">
+        <span>Buscar política</span>
+        <input [ngModel]="searchTerm()" (ngModelChange)="onSearchChange($event)" placeholder="Nombre, categoría o departamento responsable" />
+      </label>
+
+      <div class="catalog-filters">
+        <span class="catalog-filters__label">Filtrar por categoría</span>
+        <div class="catalog-filters__chips">
+          <button
+            *ngFor="let category of categories()"
+            type="button"
+            class="filter-chip"
+            [class.filter-chip--active]="categoryFilter() === category"
+            (click)="onCategoryChange(category)"
+          >
+            {{ category === 'all' ? 'Todas' : category }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="catalog-command__assistant">
+      <div class="assistant-head">
+        <div>
+          <span class="eyebrow">Asistente de clasificación</span>
+          <strong>Describe tu solicitud en lenguaje natural</strong>
+        </div>
+        <div class="assistant-actions">
+          <button type="button" class="assistant-btn assistant-btn--voice" (click)="toggleRecording()" [disabled]="aiLoading() && !aiRecording()">
+            {{ aiRecording() ? 'Detener voz' : 'Hablar' }}
+          </button>
+          <button type="button" class="assistant-btn" (click)="suggestPolicy()" [disabled]="aiLoading() || !requestText().trim()">
+            {{ aiLoading() ? 'Analizando...' : 'Sugerir trámite' }}
+          </button>
+        </div>
+      </div>
+
+      <textarea [ngModel]="requestText()" (ngModelChange)="requestText.set($event)" rows="4" placeholder="Ej. Necesito solicitar vacaciones del 10 al 20 de junio por viaje familiar."></textarea>
+      <p class="assistant-audio-status" *ngIf="aiAudioStatus()">{{ aiAudioStatus() }}</p>
+      <p class="assistant-transcript" *ngIf="transcribedText()"><strong>Texto transcrito:</strong> {{ transcribedText() }}</p>
+
+      <div class="assistant-results" *ngIf="aiSuggestions().length">
+        <article class="assistant-suggestion" *ngFor="let suggestion of aiSuggestions()">
+          <div class="assistant-suggestion__top">
+            <strong>{{ suggestion.policy_name }}</strong>
+            <span [class]="confidenceClass(suggestion.confidence)">{{ confidenceLabel(suggestion.confidence) }}</span>
+          </div>
+          <p>{{ suggestion.reason }}</p>
+          <div class="assistant-suggestion__meta">
+            <span>Confianza {{ (suggestion.confidence * 100) | number:'1.0-0' }}%</span>
+            <button type="button" class="ghost" (click)="selectPolicy(suggestion.policy_id)">Usar selección</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="catalog-layout">
+    <article class="catalog-list">
+      <div class="catalog-list__head">
+        <div>
+          <h2>Procesos disponibles</h2>
+          <p class="muted">{{ compactSummary() }}</p>
+        </div>
+        <span class="count-badge">{{ filteredCatalog().length }}</span>
+      </div>
+
+      <p class="muted panel" *ngIf="!filteredCatalog().length && !workflowService.loading()">
+        No hay políticas publicadas disponibles para iniciar trámites.
+      </p>
+
+      <div class="catalog-saturation-note" *ngIf="filteredCatalog().length > visibleCatalog().length">
+        <strong>Vista resumida</strong>
+        <p>Mostrando las 18 políticas más relevantes para evitar sobrecarga visual. Refina la búsqueda o usa el asistente para acotar más.</p>
+      </div>
+
+      <button
+        *ngFor="let item of visibleCatalog()"
+        type="button"
+        [class]="cardTone(item)"
+        [class.catalog-card--active]="selectedPolicyId() === item.id"
+        (click)="selectPolicy(item.id)"
+      >
+        <div class="catalog-card__head">
+          <span class="eyebrow">{{ item.category }}</span>
+          <span class="catalog-card__badge">{{ item.steps <= 3 ? 'Flujo corto' : item.steps <= 6 ? 'Flujo medio' : 'Flujo amplio' }}</span>
+        </div>
+        <div class="catalog-card__title-row">
+          <strong>{{ item.policyName }}</strong>
+          <span class="catalog-card__hint" *ngIf="highlightedSuggestions().has(item.id)">Sugerida por IA</span>
+        </div>
+        <p>{{ item.summary | slice:0:120 }}<ng-container *ngIf="item.summary.length > 120">...</ng-container></p>
+        <div class="catalog-meta">
+          <span>Área inicial: {{ item.targetDepartment }}</span>
+          <span>{{ item.steps }} etapas</span>
+          <span>{{ item.forms }} formularios</span>
+        </div>
+      </button>
+
+      <div class="catalog-more" *ngIf="hiddenCount() > 0">
+        <span>{{ hiddenCount() }} política(s) adicionales ocultas por resumen visual.</span>
+      </div>
+    </article>
+
+    <article class="panel detail-panel" *ngIf="selectedPolicy() as item">
+      <div class="detail-panel__hero">
+        <div>
+          <span class="eyebrow">Preparación de inicio</span>
+          <h2>{{ item.policyName }}</h2>
+          <p>{{ item.summary }}</p>
+        </div>
+        <span class="detail-panel__chip">{{ item.category }}</span>
+      </div>
+
+      <div class="detail-panel__snapshot">
+        <div class="snapshot-card">
+          <span>Área inicial</span>
+          <strong>{{ item.targetDepartment }}</strong>
+        </div>
+        <div class="snapshot-card">
+          <span>Etapas</span>
+          <strong>{{ item.steps }}</strong>
+        </div>
+        <div class="snapshot-card">
+          <span>Formularios</span>
+          <strong>{{ item.forms }}</strong>
+        </div>
+      </div>
+
+      <div>
+        <h2>{{ item.policyName }}</h2>
+        <p>Revisa los datos clave del proceso antes de iniciar el trámite. La primera tarea se asignará según el flujo publicado.</p>
+      </div>
+
+      <dl class="detail-meta">
+        <div>
+          <dt>Departamento objetivo</dt>
+          <dd>{{ item.targetDepartment }}</dd>
+        </div>
+        <div>
+          <dt>Duración estimada</dt>
+          <dd>{{ item.durationLabel }}</dd>
+        </div>
+        <div>
+          <dt>Pasos modelados</dt>
+          <dd>{{ item.steps }}</dd>
+        </div>
+        <div>
+          <dt>Formularios</dt>
+          <dd>{{ item.forms }}</dd>
+        </div>
+      </dl>
+
+      <div class="launch-note launch-note--ready">
+        <strong>Listo para iniciar</strong>
+        <p>{{ item.launchHint }}</p>
+      </div>
+
+      <div class="detail-actions">
+        <button type="button" class="detail-actions__primary" (click)="startSelectedWorkflow()" [disabled]="workflowService.creating()">
+          {{ workflowService.creating() ? 'Iniciando trámite...' : 'Iniciar trámite' }}
+        </button>
+      </div>
+    </article>
+
+    <article class="panel detail-panel" *ngIf="!selectedPolicy()">
+      <h2>Sin políticas disponibles</h2>
+      <p>Publica políticas válidas desde el panel administrativo para habilitar este catálogo.</p>
+    </article>
+  </section>
+</section>

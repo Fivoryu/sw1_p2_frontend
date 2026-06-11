@@ -1,0 +1,191 @@
+<section class="reports-page">
+  <header class="reports-hero panel">
+    <div>
+      <span class="eyebrow">Reportes Inteligentes</span>
+      <h1>Consulta el sistema en lenguaje natural</h1>
+      <p>Escribe lo que necesitas y el backend lo convertirá en una especificación segura para generar tablas, resúmenes y exportaciones.</p>
+    </div>
+  </header>
+
+  <section class="reports-layout">
+    <article class="panel reports-composer">
+      <div class="reports-composer__head">
+        <div>
+          <h2>Nuevo reporte</h2>
+          <p class="muted">Describe filtros, fechas, agrupaciones o métricas sin escribir consultas técnicas.</p>
+        </div>
+      </div>
+
+      <label>
+        Consulta
+        <textarea [ngModel]="query()" (ngModelChange)="query.set($event)" rows="5" placeholder="Ej. Documentos sin firma del trámite de Operaciones subidos por María López con más de 3 versiones por usuario"></textarea>
+      </label>
+
+      <div class="actions">
+        <button type="button" (click)="generate()" [disabled]="loading() || !query().trim()">
+          {{ loading() ? 'Generando...' : 'Generar reporte' }}
+        </button>
+        <button type="button" class="ghost mic-btn" (click)="toggleRecording()" [disabled]="audioLoading()">
+          {{ recording() ? 'Detener grabación' : (audioLoading() ? 'Transcribiendo...' : 'Reporte por audio') }}
+        </button>
+      </div>
+
+      <div class="audio-status" *ngIf="recording() || transcribedText()">
+        <span class="audio-dot" [class.is-recording]="recording()"></span>
+        <strong>{{ recording() ? 'Grabando consulta...' : 'Texto transcrito' }}</strong>
+        <p *ngIf="transcribedText()">{{ transcribedText() }}</p>
+      </div>
+
+      <div class="examples">
+        <strong>Ejemplos rápidos</strong>
+        <div class="examples__list">
+          <button type="button" class="ghost" *ngFor="let example of quickExamples" (click)="useExample(example)">{{ example }}</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel reports-summary">
+      <h2>Interpretación segura</h2>
+      <p class="muted">El sistema interpreta tu solicitud con deep learning (TensorFlow) y la convierte en una especificación validada antes de consultar MongoDB.</p>
+
+      <div class="reports-summary__grid" *ngIf="report() as report; else waitingReport">
+        <div class="summary-card">
+          <span>Tipo</span>
+          <strong>{{ report.report_type }}</strong>
+        </div>
+        <div class="summary-card">
+          <span>Intérprete</span>
+          <strong>{{ report.interpreter === 'openai' ? 'OpenAI' : (report.interpreter === 'tensorflow' ? 'TensorFlow (DL)' : (report.interpreter === 'nlp' ? 'NLP (Jaccard)' : 'Reglas')) }}</strong>
+        </div>
+        <div class="summary-card">
+          <span>Agrupación</span>
+          <strong>{{ report.group_by.length ? report.group_by.join(', ') : 'Sin agrupación' }}</strong>
+        </div>
+        <div class="summary-card">
+          <span>Métricas</span>
+          <strong>{{ report.metrics.length ? report.metrics.join(', ') : 'Cantidad' }}</strong>
+        </div>
+      </div>
+
+      <div class="detected-filters" *ngIf="detectedFilters().length">
+        <strong>Filtros detectados</strong>
+        <div class="detected-filters__list">
+          <span class="filter-pill" *ngFor="let filter of detectedFilters()">{{ filter }}</span>
+        </div>
+      </div>
+
+      <div class="warnings" *ngIf="report()?.warnings?.length">
+        <strong>Avisos</strong>
+        <ul>
+          <li *ngFor="let warning of report()!.warnings">{{ warning }}</li>
+        </ul>
+      </div>
+
+      <ng-template #waitingReport>
+        <div class="empty-state">
+          <strong>Aún no generaste un reporte</strong>
+          <p>Usa una consulta como “documentos con más de 2 versiones agrupados por usuario”.</p>
+        </div>
+      </ng-template>
+    </article>
+  </section>
+
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+
+  <article *ngIf="report() as report" class="panel report-result">
+    <div class="report-result__head">
+      <div>
+        <span class="eyebrow">Resultado</span>
+        <h2>{{ report.title }}</h2>
+        <p>{{ report.summary }}</p>
+      </div>
+
+      <div class="report-result__actions">
+        <span class="report-result__actions-label">Descargar como</span>
+        <div class="export-buttons">
+          <button
+            type="button"
+            class="ghost"
+            *ngFor="let option of exportOptions"
+            [disabled]="exporting()"
+            (click)="exportAs(option.value)"
+          >
+            {{ exporting() === option.value ? 'Generando...' : option.label }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <p class="error" *ngIf="exportError()">{{ exportError() }}</p>
+
+    <div class="report-dashboard-cards" *ngIf="summaryCards().length">
+      <article class="dashboard-card" *ngFor="let card of summaryCards()">
+        <span>{{ card.label }}</span>
+        <strong>{{ card.value }}</strong>
+      </article>
+    </div>
+
+    <details class="report-json">
+      <summary>Ver especificación interpretada</summary>
+      <code>{{ report.interpreted | json }}</code>
+    </details>
+
+    <div class="report-meta" *ngIf="report.rows.length">
+      <p class="muted">{{ pageRangeLabel() }}</p>
+      <label class="report-page-size">
+        <span>Por página</span>
+        <select [value]="pageSize()" (change)="setPageSize(+$any($event.target).value)">
+          <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="table-wrapper report-table-wrapper" *ngIf="report.rows.length; else noRows">
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th *ngFor="let col of visibleColumns(); trackBy: trackByColumn">{{ columnLabel(col) }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of paginatedRows(); trackBy: trackByRow">
+            <td *ngFor="let col of visibleColumns(); trackBy: trackByColumn">
+              <ng-container *ngIf="isBadgeColumn(col); else plainCell">
+                <span [class]="badgeClass(col, row[col])">{{ row[col] }}</span>
+              </ng-container>
+              <ng-template #plainCell>
+                <ng-container *ngIf="isDateColumn(col); else textCell">
+                  {{ $any(row[col]) | date: 'M/d/yy, h:mm a' }}
+                </ng-container>
+                <ng-template #textCell>{{ row[col] }}</ng-template>
+              </ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="report-pagination" *ngIf="report.rows.length > pageSize()" aria-label="Paginación del reporte">
+      <button type="button" class="ghost" (click)="previousPage()" [disabled]="currentPage() === 1">Anterior</button>
+      <div class="report-pagination__pages">
+        <button
+          type="button"
+          class="report-pagination__page"
+          *ngFor="let page of visiblePages()"
+          [class.is-active]="page === currentPage()"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+      <button type="button" class="ghost" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Siguiente</button>
+    </nav>
+
+    <ng-template #noRows>
+      <div class="empty-state">
+        <strong>Sin resultados</strong>
+        <p>{{ report.suggestions.length ? ('Prueba con: ' + report.suggestions.join(' · ')) : 'No hubo coincidencias para la consulta actual.' }}</p>
+      </div>
+    </ng-template>
+  </article>
+</section>

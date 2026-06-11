@@ -1,0 +1,241 @@
+.general-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.general-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 45%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.general-hero h1 {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.55rem, 2vw, 2rem);
+}
+
+.general-hero p {
+  margin: 0.45rem 0 0;
+  max-width: 44rem;
+  color: #475569;
+}
+
+.general-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .general-metrics .metric-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.general-charts {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.1fr);
+}
+
+.general-chart-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+}
+
+.general-chart-card--wide {
+  grid-column: 1 / -1;
+}
+
+.general-chart-card header h3,
+.general-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.general-chart-card header p,
+.general-card__head p {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.general-main-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.general-card {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+}
+
+.general-card--wide {
+  grid-column: 1 / -1;
+}
+
+.general-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.general-list__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.88rem;
+}
+
+.general-list__item strong {
+  color: #2563eb;
+  white-space: nowrap;
+}
+
+.general-list__item--warning {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.general-review-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.general-review-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  background: #ffffff;
+}
+
+.general-review-card strong {
+  color: #0f172a;
+}
+
+.general-review-card small {
+  color: #64748b;
+}
+
+.general-review-card--warning {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.general-review-card--success {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.general-tag {
+  width: fit-content;
+  margin-top: 0.25rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.general-anomalies {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.general-anomaly {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.general-anomaly strong {
+  color: #0f172a;
+}
+
+.general-anomaly--danger {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.general-anomaly--danger strong {
+  color: #b91c1c;
+}
+
+.general-anomaly--success {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.general-anomaly--success strong {
+  color: #15803d;
+}
+
+.general-empty {
+  margin: 0;
+  padding: 0.85rem;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  color: #64748b;
+  text-align: center;
+}
+
+.general-empty--success {
+  border: 1px solid #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+@media (max-width: 1100px) {
+  :host ::ng-deep .general-metrics .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .general-charts,
+  .general-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .general-chart-card--wide,
+  .general-card--wide {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .general-hero {
+    flex-direction: column;
+  }
+
+  :host ::ng-deep .general-metrics .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}

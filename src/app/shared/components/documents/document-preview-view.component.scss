@@ -1,0 +1,144 @@
+.doc-preview {
+  display: grid;
+  gap: 0.75rem;
+  min-height: 24rem;
+}
+
+.doc-preview__loading,
+.doc-preview__error,
+.doc-preview__hint {
+  margin: 0;
+  color: #64748b;
+}
+
+.doc-preview__error {
+  color: #b42318;
+}
+
+.doc-preview__frame {
+  width: 100%;
+  min-height: calc(100vh - 12rem);
+  border: 1px solid #d0d7de;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.doc-preview__image {
+  display: block;
+  max-width: 100%;
+  margin: 0 auto;
+  border: 1px solid #d0d7de;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.doc-preview__media {
+  width: 100%;
+  max-height: calc(100vh - 12rem);
+  border-radius: 0.5rem;
+  background: #0f172a;
+}
+
+.doc-preview__audio {
+  width: 100%;
+}
+
+.doc-preview__text {
+  margin: 0;
+  max-height: calc(100vh - 12rem);
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid #d0d7de;
+  border-radius: 0.5rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.doc-preview__rich {
+  max-height: calc(100vh - 12rem);
+  overflow: auto;
+  padding: 1.5rem 2rem;
+  border: 1px solid #d0d7de;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #1e293b;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.doc-preview__rich :is(h1, h2, h3) {
+  margin: 1rem 0 0.5rem;
+}
+
+.doc-preview__rich p {
+  margin: 0 0 0.75rem;
+}
+
+.doc-preview__rich ul,
+.doc-preview__rich ol {
+  margin: 0 0 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.doc-preview__rich blockquote {
+  margin: 0 0 0.75rem;
+  padding-left: 1rem;
+  border-left: 3px solid #cbd5e1;
+  color: #475569;
+}
+
+.doc-preview__fallback {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.doc-preview__fallback p {
+  margin: 0;
+}
+
+.doc-preview--compact {
+  min-height: 0;
+  gap: 0.5rem;
+}
+
+.doc-preview--compact .doc-preview__frame {
+  min-height: 14rem;
+  max-height: 18rem;
+}
+
+.doc-preview--compact .doc-preview__image {
+  max-height: 18rem;
+  object-fit: contain;
+}
+
+.doc-preview--compact .doc-preview__media {
+  max-height: 18rem;
+}
+
+.doc-preview--compact .doc-preview__text {
+  max-height: 18rem;
+  padding: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.doc-preview--compact .doc-preview__fallback {
+  padding: 0.65rem;
+  font-size: 0.82rem;
+}
+
+.doc-preview--compact .doc-preview__fallback button {
+  width: fit-content;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.82rem;
+}

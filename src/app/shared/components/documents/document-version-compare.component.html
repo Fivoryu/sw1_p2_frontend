@@ -1,0 +1,136 @@
+<div class="compare-backdrop" (click)="closeModal()">
+  <div class="compare-modal" (click)="$event.stopPropagation()">
+    <header class="compare-header">
+      <div class="compare-header__title">
+        <span class="eyebrow">Comparación de versiones</span>
+        <h2>{{ documentName() }}</h2>
+      </div>
+      <button type="button" class="compare-close" (click)="closeModal()">&times;</button>
+    </header>
+
+    <section class="compare-controls">
+      <label class="compare-field">
+        <span>Desde</span>
+        <select [ngModel]="fromVersion()" (ngModelChange)="fromVersion.set(+$event)">
+          @for (v of sortedVersions(); track v.version) {
+            <option [value]="v.version" [disabled]="v.version === toVersion()">v{{ v.version }} — {{ v.fileName }}</option>
+          }
+        </select>
+      </label>
+      <label class="compare-field">
+        <span>Hasta</span>
+        <select [ngModel]="toVersion()" (ngModelChange)="toVersion.set(+$event)">
+          @for (v of sortedVersions(); track v.version) {
+            <option [value]="v.version" [disabled]="v.version === fromVersion()">v{{ v.version }} — {{ v.fileName }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="compare-btn compare-btn--primary" [disabled]="!canCompare() || comparing()" (click)="compare()">
+        {{ comparing() ? 'Comparando…' : 'Comparar' }}
+      </button>
+      @if (hunks().length) {
+        <button type="button" class="compare-btn compare-btn--toggle" (click)="toggleView()">
+          {{ viewMode() === 'side-by-side' ? 'Unificado' : 'Lado a lado' }}
+        </button>
+      }
+    </section>
+
+    @if (error()) {
+      <div class="compare-error">{{ error() }}</div>
+    }
+
+    @if (result()) {
+      <section class="compare-stats">
+        <div class="compare-stat compare-stat--same" *ngIf="result()!.same_content">
+          <span class="compare-stat__icon">&#10003;</span>
+          <span>Contenido idéntico</span>
+        </div>
+        <div class="compare-stat compare-stat--diff" *ngIf="!result()!.same_content">
+          <span class="compare-stat__icon">&#9679;</span>
+          <span>Contenido diferente</span>
+        </div>
+        <div class="compare-stat" *ngIf="result()!.mime_type_changed">
+          Tipo de archivo cambiado
+        </div>
+        <div class="compare-stat">
+          Tamaño: {{ result()!.size_delta > 0 ? '+' : '' }}{{ formatFileSize(result()!.size_delta) }}
+        </div>
+        <div class="compare-stat compare-stat--green" *ngIf="addedCount()">
+          +{{ addedCount() }} línea{{ addedCount() !== 1 ? 's' : '' }} añadida{{ addedCount() !== 1 ? 's' : '' }}
+        </div>
+        <div class="compare-stat compare-stat--red" *ngIf="removedCount()">
+          -{{ removedCount() }} línea{{ removedCount() !== 1 ? 's' : '' }} eliminada{{ removedCount() !== 1 ? 's' : '' }}
+        </div>
+        <div class="compare-stat compare-stat--amber" *ngIf="changedCount()">
+          {{ changedCount() }} línea{{ changedCount() !== 1 ? 's' : '' }} cambiada{{ changedCount() !== 1 ? 's' : '' }}
+        </div>
+        <div class="compare-stat" *ngIf="similarity()">
+          {{ similarity() }}% similar
+        </div>
+      </section>
+    }
+
+    @if (result() && hunks().length) {
+      <div class="compare-diff-wrap">
+        @if (viewMode() === 'side-by-side') {
+          <div class="diff-split">
+            @for (hunk of hunks(); track $index) {
+              <div class="diff-hunk-header" *ngIf="hunk.header">{{ hunk.header }}</div>
+              <div class="diff-split__row" *ngFor="let line of hunk.rows">
+                <div class="diff-split__cell diff-split__cell--left" [ngClass]="{
+                  'diff-split__cell--added': line.type === 'added',
+                  'diff-split__cell--removed': line.type === 'removed',
+                  'diff-split__cell--context': line.type === 'context'
+                }">
+                  <span class="diff-gutter">{{ line.type === 'removed' ? '−' : line.type === 'added' ? '' : '' }}</span>
+                  <span class="diff-lineno">{{ line.oldLineNo ?? '' }}</span>
+                  <code class="diff-code" [innerHTML]="line.leftHtml"></code>
+                </div>
+                <div class="diff-split__cell diff-split__cell--right" [ngClass]="{
+                  'diff-split__cell--added': line.type === 'added',
+                  'diff-split__cell--removed': line.type === 'removed',
+                  'diff-split__cell--context': line.type === 'context'
+                }">
+                  <span class="diff-gutter">{{ line.type === 'added' ? '+' : line.type === 'removed' ? '' : '' }}</span>
+                  <span class="diff-lineno">{{ line.newLineNo ?? '' }}</span>
+                  <code class="diff-code" [innerHTML]="line.rightHtml"></code>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="diff-unified">
+            @for (hunk of hunks(); track $index) {
+              <div class="diff-hunk-header" *ngIf="hunk.header">{{ hunk.header }}</div>
+              <div class="diff-unified__row" *ngFor="let line of hunk.rows" [ngClass]="{
+                'diff-unified__row--added': line.type === 'added',
+                'diff-unified__row--removed': line.type === 'removed'
+              }">
+                <span class="diff-gutter">{{ line.type === 'removed' ? '−' : line.type === 'added' ? '+' : '' }}</span>
+                <span class="diff-lineno diff-lineno--old">{{ line.oldLineNo ?? '' }}</span>
+                <span class="diff-lineno diff-lineno--new">{{ line.newLineNo ?? '' }}</span>
+                @if (line.type === 'removed') {
+                  <code class="diff-code" [innerHTML]="line.leftHtml"></code>
+                } @else if (line.type === 'added') {
+                  <code class="diff-code" [innerHTML]="line.rightHtml"></code>
+                } @else {
+                  <code class="diff-code" [innerHTML]="line.leftHtml"></code>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    } @else if (result() && !hunks().length) {
+      <div class="compare-empty">
+        <p *ngIf="result()!.mime_type_changed">El tipo de archivo cambió entre versiones — no hay diff textual.</p>
+        <p *ngIf="!result()!.mime_type_changed && result()!.same_content">Ambas versiones tienen contenido idéntico.</p>
+        <p *ngIf="!result()!.mime_type_changed && !result()!.same_content">No se pudo generar la comparación textual.</p>
+      </div>
+    }
+
+    <footer class="compare-footer">
+      <button type="button" class="compare-btn compare-btn--ghost" (click)="closeModal()">Cerrar</button>
+    </footer>
+  </div>
+</div>

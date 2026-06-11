@@ -1,0 +1,120 @@
+.anomalies-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.anomalies-hero,
+.anomaly-filters,
+.anomaly-metrics {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.anomalies-hero h1,
+.anomalies-hero p {
+  margin: 0.25rem 0 0;
+}
+
+.anomaly-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.anomaly-metrics article {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.anomaly-metrics span {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.anomaly-metrics strong {
+  font-size: 1.6rem;
+}
+
+.anomaly-filters {
+  justify-content: flex-start;
+}
+
+.anomaly-filters label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.anomaly-table {
+  overflow-x: auto;
+}
+
+.anomaly-head,
+.anomaly-row {
+  display: grid;
+  grid-template-columns: 0.8fr 1fr 1.1fr minmax(16rem, 2fr) 1.2fr 0.8fr 1.2fr;
+  gap: 0.75rem;
+  align-items: start;
+  min-width: 980px;
+  padding: 0.75rem 1rem;
+}
+
+.anomaly-head {
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.anomaly-row {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.severity {
+  width: fit-content;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.severity--critical { color: #ffffff; background: #7f1d1d; }
+.severity--high { color: #991b1b; background: #fee2e2; }
+.severity--medium { color: #92400e; background: #fef3c7; }
+.severity--low { color: #166534; background: #dcfce7; }
+
+.anomaly-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.ack-box {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.65rem;
+  background: #f8fafc;
+}
+
+.anomaly-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+}
+
+@media (max-width: 900px) {
+  .anomalies-hero,
+  .anomaly-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .anomaly-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -1,0 +1,249 @@
+<section class="page funcionarios-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Gestión operativa</span>
+      <h2>Funcionarios</h2>
+      <p>Administra al personal operativo y asigna el departamento responsable de cada funcionario.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="secondary" (click)="reload()">Recargar</button>
+      <button type="button" class="ghost" *ngIf="unassignedCount()" (click)="showUnassignedOnly()">
+        Ver sin asignar ({{ unassignedCount() }})
+      </button>
+    </div>
+  </header>
+
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+  <p class="notice" *ngIf="successNotice()">{{ successNotice() }}</p>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <span>Total</span>
+      <strong>{{ funcionariosCount() }}</strong>
+      <small>funcionarios registrados</small>
+    </article>
+    <article class="stat-card accent-green">
+      <span>Activos</span>
+      <strong>{{ activeFuncionariosCount() }}</strong>
+      <small>cuentas habilitadas</small>
+    </article>
+    <article class="stat-card accent-amber">
+      <span>Sin asignar</span>
+      <strong>{{ unassignedCount() }}</strong>
+      <small>sin departamento</small>
+    </article>
+  </section>
+
+  <div class="funcionarios-body" *ngIf="!loading(); else loadingState">
+    <article class="panel list-panel funcionarios-panel">
+      <div class="bulk-bar" *ngIf="selectedCount()">
+        <div class="bulk-bar__copy">
+          <strong>{{ selectedCount() }} seleccionado(s)</strong>
+          <p>Reasigna el departamento de la selección en un solo paso.</p>
+        </div>
+        <div class="bulk-bar__actions">
+          <app-custom-select
+            [selectValue]="bulkDepartmentId()"
+            (selectValueChange)="bulkDepartmentId.set($event)"
+            [options]="departmentAssignOptions()"
+            placeholder="Departamento destino"
+            ariaLabel="Departamento destino para reasignación masiva"
+            [compact]="true"
+          />
+          <button
+            type="button"
+            (click)="applyBulkDepartment()"
+            [disabled]="!bulkDepartmentId() || updatingUserId() === 'bulk'"
+          >
+            {{ updatingUserId() === 'bulk' ? 'Reasignando...' : 'Aplicar' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-title">
+          <h3>Lista de funcionarios</h3>
+          <p>{{ filteredFuncionarios().length }} resultado(s)</p>
+        </div>
+
+        <div class="filters-grid">
+          <label class="filter-field search-field">
+            <span>Buscar</span>
+            <input
+              [value]="searchTerm()"
+              (input)="searchTerm.set($any($event.target).value)"
+              placeholder="Nombre o correo"
+            />
+          </label>
+
+          <label class="filter-field">
+            <span>Departamento</span>
+            <app-custom-select
+              [selectValue]="selectedDepartment()"
+              (selectValueChange)="onDepartmentFilterChange($event)"
+              [options]="departmentFilterOptions()"
+              ariaLabel="Filtrar por departamento"
+            />
+          </label>
+
+          <label class="filter-field">
+            <span>Estado</span>
+            <app-custom-select
+              [selectValue]="selectedStatus()"
+              (selectValueChange)="onStatusFilterChange($event)"
+              [options]="statusFilterOptions"
+              ariaLabel="Filtrar por estado"
+            />
+          </label>
+
+          <button type="button" class="ghost clear-button" (click)="clearFilters()">Limpiar</button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-check">
+                <input
+                  type="checkbox"
+                  [checked]="allVisibleSelected()"
+                  (change)="toggleSelectAllVisible()"
+                  aria-label="Seleccionar todos los visibles"
+                />
+              </th>
+              <th>Funcionario</th>
+              <th>Departamento</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of filteredFuncionarios()" [class.row-saving]="updatingUserId() === user.id">
+              <td class="col-check">
+                <input
+                  type="checkbox"
+                  [checked]="selectedUserIds().includes(user.id)"
+                  (change)="toggleUserSelection(user.id, $any($event.target).checked)"
+                  [attr.aria-label]="'Seleccionar ' + user.full_name"
+                />
+              </td>
+              <td>
+                <div class="user-cell">
+                  <div class="avatar-pill">{{ user.full_name.charAt(0) }}</div>
+                  <div>
+                    <strong>{{ user.full_name }}</strong>
+                    <small>{{ user.email }}</small>
+                  </div>
+                </div>
+              </td>
+              <td class="dept-cell">
+                <select
+                  class="dept-select"
+                  [ngModel]="user.department_id ?? ''"
+                  (ngModelChange)="reassignDepartment(user, $event)"
+                  [disabled]="!canWrite() || updatingUserId() === user.id || updatingUserId() === 'bulk'"
+                >
+                  <option value="">Sin departamento</option>
+                  <option *ngFor="let department of departments()" [value]="department.id">{{ department.name }}</option>
+                </select>
+                <small class="saving-hint" *ngIf="updatingUserId() === user.id">Guardando...</small>
+              </td>
+              <td>
+                <span class="badge" [class.inactive]="!user.is_active">{{ statusLabel(user) }}</span>
+              </td>
+              <td class="actions-cell">
+                <button type="button" class="ghost" (click)="openEdit(user)">Editar</button>
+              </td>
+            </tr>
+            <tr *ngIf="!filteredFuncionarios().length">
+              <td colspan="5">
+                <div class="empty-state">
+                  <strong>No hay funcionarios que coincidan con el filtro.</strong>
+                  <small>Ajusta la búsqueda o limpia los filtros para ver más resultados.</small>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <aside class="panel distrib-panel">
+      <div class="distrib-panel__head">
+        <div>
+          <h3>Distribución</h3>
+          <p>Por departamento asignado</p>
+        </div>
+        <span class="distrib-total">{{ funcionariosCount() }}</span>
+      </div>
+
+      <div class="distrib-list" *ngIf="byDepartment().length; else emptySummary">
+        <article class="distrib-item" *ngFor="let item of byDepartment()">
+          <div class="distrib-item__meta">
+            <span class="distrib-item__name">{{ item.name }}</span>
+            <span class="distrib-item__count">{{ item.total }}</span>
+          </div>
+          <div class="distrib-item__track" role="presentation">
+            <span class="distrib-item__fill" [style.width.%]="item.percent"></span>
+          </div>
+        </article>
+      </div>
+
+      <ng-template #emptySummary>
+        <p class="muted distrib-empty">Sin funcionarios registrados.</p>
+      </ng-template>
+    </aside>
+  </div>
+
+  <ng-template #loadingState>
+    <p class="muted loading">Cargando funcionarios...</p>
+  </ng-template>
+
+  <div class="modal-backdrop" *ngIf="editingUser() as user" (click)="closeEdit()">
+    <div
+      class="entity-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="funcionario-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="entity-modal__header">
+        <div class="entity-modal__heading">
+          <span class="entity-modal__eyebrow">Editar funcionario</span>
+          <h3 id="funcionario-modal-title">{{ user.full_name }}</h3>
+          <p class="entity-modal__subtitle">{{ user.email }}</p>
+        </div>
+        <button type="button" class="entity-modal__close" aria-label="Cerrar" (click)="closeEdit()">×</button>
+      </header>
+
+      <div class="entity-modal__body">
+        <label class="entity-modal__field">
+          <span>Departamento asignado</span>
+          <app-custom-select
+            [selectValue]="editDepartmentId()"
+            (selectValueChange)="editDepartmentId.set($event)"
+            [options]="departmentAssignOptions()"
+            placeholder="Sin departamento"
+            ariaLabel="Departamento del funcionario"
+            [compact]="true"
+          />
+        </label>
+      </div>
+
+      <footer class="entity-modal__footer">
+        <button type="button" class="entity-modal__btn entity-modal__btn--secondary" (click)="closeEdit()">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="entity-modal__btn entity-modal__btn--primary"
+          (click)="saveEdit()"
+          [disabled]="updatingUserId() === user.id"
+        >
+          {{ updatingUserId() === user.id ? 'Guardando...' : 'Guardar cambio' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+</section>

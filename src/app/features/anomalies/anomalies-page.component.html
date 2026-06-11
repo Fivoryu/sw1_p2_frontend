@@ -1,0 +1,72 @@
+<section class="anomalies-page">
+  <header class="anomalies-hero panel">
+    <div>
+      <span class="eyebrow">IA operacional</span>
+      <h1>Detección de anomalías</h1>
+      <p>Alertas estadísticas persistidas sobre trámites, documentos y acciones inusuales.</p>
+    </div>
+    <button type="button" (click)="runDetection()" [disabled]="running()">
+      {{ running() ? 'Detectando...' : 'Ejecutar detección' }}
+    </button>
+  </header>
+
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+
+  <section class="anomaly-metrics">
+    <article class="panel"><span>Abiertas</span><strong>{{ openCount() }}</strong></article>
+    <article class="panel"><span>Críticas</span><strong>{{ severityCounts()['critical'] }}</strong></article>
+    <article class="panel"><span>Altas</span><strong>{{ severityCounts()['high'] }}</strong></article>
+    <article class="panel"><span>Total filtro</span><strong>{{ total() }}</strong></article>
+  </section>
+
+  <section class="anomaly-filters panel">
+    <label>Estado
+      <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); load()">
+        <option value="">Todos</option>
+        <option value="open">Abiertas</option>
+        <option value="acknowledged">Reconocidas</option>
+        <option value="dismissed">Descartadas</option>
+      </select>
+    </label>
+    <label>Severidad
+      <select [ngModel]="severityFilter()" (ngModelChange)="severityFilter.set($event); load()">
+        <option value="">Todas</option>
+        <option value="critical">Crítica</option>
+        <option value="high">Alta</option>
+        <option value="medium">Media</option>
+        <option value="low">Baja</option>
+      </select>
+    </label>
+    <label>Entidad
+      <select [ngModel]="entityTypeFilter()" (ngModelChange)="entityTypeFilter.set($event); load()">
+        <option value="">Todas</option>
+        <option value="workflow_instance">Trámite</option>
+        <option value="document">Documento</option>
+        <option value="user">Usuario</option>
+      </select>
+    </label>
+  </section>
+
+  <section class="anomaly-table panel">
+    <div class="anomaly-head">
+      <span>Severidad</span><span>Tipo</span><span>Entidad</span><span>Descripción</span><span>Métrica</span><span>Estado</span><span>Acciones</span>
+    </div>
+    <article class="anomaly-row" *ngFor="let alert of alerts()">
+      <span class="severity severity--{{ alert.severity }}">{{ alert.severity }}</span>
+      <span>{{ alert.alert_type }}</span>
+      <span>{{ alert.entity_label }}</span>
+      <span>{{ alert.description }}</span>
+      <span>z={{ metric(alert, 'z_score') }} · actual={{ metric(alert, 'current_value') }}</span>
+      <span>{{ alert.status }}</span>
+      <span class="anomaly-actions">
+        <button type="button" class="ghost" *ngIf="alert.status === 'open'" (click)="startAcknowledge(alert.id)">Reconocer</button>
+        <button type="button" class="ghost" *ngIf="alert.status === 'open'" (click)="dismiss(alert.id)">Descartar</button>
+      </span>
+      <div class="ack-box" *ngIf="acknowledgingId() === alert.id">
+        <textarea [ngModel]="notesDraft()" (ngModelChange)="notesDraft.set($event)" rows="2" placeholder="Nota de revisión"></textarea>
+        <button type="button" (click)="acknowledge(alert.id)">Guardar reconocimiento</button>
+      </div>
+    </article>
+    <div class="anomaly-empty" *ngIf="!loading() && !alerts().length">Sin anomalías para los filtros actuales.</div>
+  </section>
+</section>

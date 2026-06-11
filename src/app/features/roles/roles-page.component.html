@@ -1,0 +1,169 @@
+<section class="page roles-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Seguridad</span>
+      <h2>Roles y permisos</h2>
+      <p>Gestiona perfiles de acceso con permisos definidos y edición controlada.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="secondary" (click)="reload()">Recargar</button>
+      <button type="button" class="create-button" [disabled]="!canWrite()" (click)="openCreateModal()">
+        <span class="plus-icon">+</span>
+        <span>Nuevo rol</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="panel list-panel roles-panel">
+    <div class="roles-metrics">
+      <div class="roles-metrics__item">
+        <strong>{{ roles().length }}</strong>
+        <span>roles totales</span>
+      </div>
+      <div class="roles-metrics__divider" aria-hidden="true"></div>
+      <div class="roles-metrics__item">
+        <strong>{{ systemRolesCount() }}</strong>
+        <span>del sistema</span>
+      </div>
+      <div class="roles-metrics__divider" aria-hidden="true"></div>
+      <div class="roles-metrics__item">
+        <strong>{{ customRolesCount() }}</strong>
+        <span>personalizados</span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-title">
+        <h3>Listado de roles</h3>
+        <p>{{ filteredRoles().length }} resultado(s)</p>
+      </div>
+
+      <div class="filters-grid roles-filters-grid" [formGroup]="filtersForm">
+        <label class="filter-field search-field">
+          <span>Buscar</span>
+          <input
+            [value]="searchTerm()"
+            (input)="setSearchTerm($any($event.target).value)"
+            placeholder="Nombre o descripción"
+          />
+        </label>
+
+        <label class="filter-field">
+          <span>Tipo</span>
+          <app-custom-select
+            formControlName="mode"
+            [options]="modeFilterOptions"
+            ariaLabel="Filtrar por tipo de rol"
+          />
+        </label>
+
+        <button type="button" class="ghost clear-button" (click)="clearFilters()">Limpiar</button>
+      </div>
+    </div>
+
+    <p class="roles-loading-text" *ngIf="loading()">Cargando roles...</p>
+
+    <div class="roles-grid" *ngIf="!loading()">
+      <article class="role-card" *ngFor="let role of filteredRoles()">
+        <header class="role-card__head">
+          <div class="role-card__title">
+            <h4>{{ role.name }}</h4>
+            <p>{{ role.description }}</p>
+          </div>
+          <span class="role-type" [class.role-type--system]="role.is_system">
+            {{ role.is_system ? 'Sistema' : 'Personalizado' }}
+          </span>
+        </header>
+
+        <div class="role-card__body">
+          <p class="role-card__summary">{{ permissionSummary(role) }}</p>
+
+          <div class="role-card__tags" *ngIf="hasFullAccess(role) || role.permissions.length">
+            <code class="perm-tag perm-tag--all" *ngIf="hasFullAccess(role)">*</code>
+            <code class="perm-tag" *ngFor="let permission of visiblePermissions(role)">{{ permission }}</code>
+            <span class="perm-tag perm-tag--more" *ngIf="hiddenPermissionsCount(role) > 0">
+              +{{ hiddenPermissionsCount(role) }} más
+            </span>
+          </div>
+        </div>
+
+        <footer class="role-card__foot actions-row">
+          <button type="button" class="ghost" (click)="startEdit(role)">Editar</button>
+          <button type="button" class="ghost danger" [disabled]="role.is_system || !canWrite()" (click)="remove(role)">
+            Eliminar
+          </button>
+        </footer>
+      </article>
+
+      <article class="empty-role-state" *ngIf="!filteredRoles().length">
+        <strong>No hay roles que coincidan con el filtro.</strong>
+        <small>Prueba limpiando los filtros o creando un nuevo rol.</small>
+        <button type="button" class="secondary" (click)="clearFilters()">Limpiar filtros</button>
+      </article>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="modalOpen()" (click)="closeModal()">
+    <div
+      class="entity-modal entity-modal--wide"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="role-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <form class="entity-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+        <header class="entity-modal__header">
+          <div class="entity-modal__heading">
+            <span class="entity-modal__eyebrow">{{ editingRoleId() ? 'Edición' : 'Alta' }}</span>
+            <h3 id="role-modal-title">{{ editingRoleId() ? 'Editar rol' : 'Crear rol' }}</h3>
+            <p class="entity-modal__subtitle">
+              {{
+                editingRoleId()
+                  ? 'Modifica el nombre, la descripción y los permisos asignados a este rol.'
+                  : 'Define un perfil de acceso con los permisos que necesite el equipo.'
+              }}
+            </p>
+          </div>
+          <button type="button" class="entity-modal__close" aria-label="Cerrar" (click)="closeModal()">×</button>
+        </header>
+
+        <div class="entity-modal__body">
+          <label class="entity-modal__field">
+            <span>Nombre</span>
+            <input formControlName="name" placeholder="Ej. Supervisor" />
+          </label>
+
+          <label class="entity-modal__field">
+            <span>Descripción</span>
+            <textarea rows="3" formControlName="description" placeholder="Describe el alcance de este rol"></textarea>
+          </label>
+
+          <div>
+            <span class="entity-modal__section-title">Permisos</span>
+            <div class="entity-modal__permissions">
+              <label class="entity-modal__permission" *ngFor="let permission of permissions">
+                <input
+                  type="checkbox"
+                  [checked]="form.controls.permissions.value.includes(permission)"
+                  (change)="togglePermission(permission, $any($event.target).checked)"
+                />
+                <span>{{ permission }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <p class="entity-modal__error" *ngIf="error()">{{ error() }}</p>
+
+        <footer class="entity-modal__footer">
+          <button type="button" class="entity-modal__btn entity-modal__btn--secondary" (click)="closeModal()">
+            Cancelar
+          </button>
+          <button type="submit" class="entity-modal__btn entity-modal__btn--primary" [disabled]="!canWrite() || saving()">
+            {{ saving() ? 'Guardando...' : editingRoleId() ? 'Actualizar rol' : 'Crear rol' }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,271 @@
+.audit-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.audit-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 45%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.audit-hero h1 {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.55rem, 2vw, 2rem);
+}
+
+.audit-hero p {
+  margin: 0.45rem 0 0;
+  max-width: 44rem;
+  color: #475569;
+}
+
+.audit-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.audit-charts {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.audit-chart-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+}
+
+.audit-chart-card--wide {
+  grid-column: 1 / -1;
+}
+
+.audit-chart-card header h3,
+.audit-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.audit-chart-card header p,
+.audit-card__head p {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.audit-main-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+}
+
+.audit-card {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+}
+
+.audit-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.audit-side-stack {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.audit-timeline {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.audit-timeline__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+}
+
+.audit-timeline__rail {
+  width: 0.55rem;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #2563eb, #93c5fd);
+}
+
+.audit-timeline__body {
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  background: #f8fafc;
+}
+
+.audit-timeline__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.audit-timeline__top strong {
+  color: #0f172a;
+}
+
+.audit-timeline__top time {
+  flex-shrink: 0;
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.audit-timeline__user {
+  margin: 0.35rem 0 0;
+  color: #475569;
+  font-size: 0.84rem;
+}
+
+.audit-timeline__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+}
+
+.audit-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.audit-tag--category {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.audit-tag--resource {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.audit-tag--status {
+  background: #ecfeff;
+  color: #0e7490;
+}
+
+.audit-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.audit-list__item {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.9rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.audit-list__item small {
+  color: #64748b;
+}
+
+.audit-list__item--danger,
+.audit-timeline__item--danger .audit-timeline__body {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.audit-list__item--success {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.audit-coverage {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.audit-coverage__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 0.86rem;
+}
+
+.audit-flow-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.audit-flow-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  background: #f8fafc;
+}
+
+.audit-flow-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.audit-flow-card p,
+.audit-flow-card small {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.audit-empty {
+  margin: 0;
+  color: #64748b;
+}
+
+@media (max-width: 980px) {
+  .audit-charts,
+  .audit-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-chart-card--wide {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .audit-hero {
+    flex-direction: column;
+  }
+
+  .audit-timeline__top {
+    flex-direction: column;
+  }
+}

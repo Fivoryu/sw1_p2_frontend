@@ -1,0 +1,61 @@
+<div class="shell" [class.shell--sidebar-collapsed]="sidebarCollapsed()">
+  <aside class="sidebar" [class.sidebar--collapsed]="sidebarCollapsed()">
+    <div class="sidebar-top">
+      <div class="brand" [class.brand--compact]="sidebarCollapsed()">
+        <span class="brand-mark" aria-hidden="true">SW1</span>
+        <div class="brand-copy">
+          <span class="eyebrow">Sprint 1</span>
+          <h1>Admin</h1>
+          <p>Base operativa del sistema</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="sidebar-toggle"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="sidebarCollapsed() ? 'Expandir menú' : 'Comprimir menú'"
+        [title]="sidebarCollapsed() ? 'Expandir menú' : 'Comprimir menú'"
+      >
+        <app-sidebar-nav-icon [name]="sidebarCollapsed() ? 'chevron-right' : 'chevron-left'" />
+      </button>
+    </div>
+
+    <div class="session-card" *ngIf="currentUser as user">
+      <span class="session-avatar" aria-hidden="true">{{ userInitials(user.full_name) }}</span>
+      <div class="session-copy">
+        <strong>{{ user.full_name }}</strong>
+        <span>{{ user.role_name }}</span>
+        <small>{{ user.department_name || 'Sin departamento' }}</small>
+      </div>
+    </div>
+
+    <nav class="nav-links" aria-label="Administración">
+      @for (group of navigationGroups(); track group.label ?? 'core') {
+        @if (group.label && !sidebarCollapsed()) {
+          <span class="nav-section">{{ group.label }}</span>
+        }
+        @for (item of group.items; track item.route) {
+          <a [routerLink]="item.route" routerLinkActive="active" [title]="item.label">
+            <span class="nav-icon" aria-hidden="true">
+              <app-sidebar-nav-icon [name]="item.icon" />
+            </span>
+            <span class="nav-text">{{ item.label }}</span>
+          </a>
+        }
+      }
+    </nav>
+
+    <button class="logout-btn" type="button" (click)="logout()">
+      <span class="nav-icon" aria-hidden="true">
+        <app-sidebar-nav-icon name="logout" />
+      </span>
+      <span class="nav-text">Cerrar sesión</span>
+    </button>
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+  <app-chat-widget />
+  <app-ai-assistant-widget />
+</div>

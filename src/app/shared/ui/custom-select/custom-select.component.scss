@@ -1,0 +1,114 @@
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.9rem;
+  background: #fff;
+  color: #0f172a;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: #94a3b8;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background: #f8fafc;
+  }
+}
+
+.custom-select__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select__chevron {
+  flex-shrink: 0;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid #64748b;
+  border-bottom: 2px solid #64748b;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.15s ease;
+}
+
+.custom-select--open .custom-select__chevron {
+  transform: rotate(225deg) translateY(2px);
+}
+
+.custom-select__menu {
+  position: absolute;
+  z-index: 120;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.65rem;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.custom-select__menu--overlay {
+  position: fixed;
+  z-index: 10120;
+  top: 0;
+  left: 0;
+  right: auto;
+  max-height: 14rem;
+}
+
+.custom-select__option {
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.45rem;
+  color: #0f172a;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+}
+
+.custom-select__option--selected {
+  background: #2563eb;
+  color: #fff;
+
+  &:hover {
+    background: #1d4ed8;
+  }
+}
+
+.custom-select--disabled .custom-select__menu {
+  display: none;
+}
+
+.custom-select--compact .custom-select__trigger {
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+}

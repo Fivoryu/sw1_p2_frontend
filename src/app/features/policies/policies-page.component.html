@@ -1,0 +1,303 @@
+<section class="page policies-page">
+  <header class="policies-topbar panel">
+    <div class="policies-topbar__copy">
+      <span class="eyebrow">Gestión de procesos</span>
+      <h2>Políticas y diagramas</h2>
+    </div>
+
+    <nav class="policies-navbar" aria-label="Secciones de políticas">
+      <button type="button" class="policies-navbar__item" [class.is-active]="activeSection() === 'overview'" (click)="setSection('overview')">
+        Resumen
+      </button>
+      <button type="button" class="policies-navbar__item" [class.is-active]="activeSection() === 'catalog'" (click)="setSection('catalog')">
+        Catálogo
+      </button>
+    </nav>
+
+    <div class="policies-topbar__actions">
+      <button type="button" class="ghost policies-topbar__reload" (click)="reload()">Recargar</button>
+      <button type="button" class="create-button" [disabled]="!canWrite()" (click)="openCreateModal()">
+        <span class="plus-icon">+</span>
+        <span>Nueva</span>
+      </button>
+    </div>
+  </header>
+
+  <ng-container *ngIf="activeSection() === 'overview' && !loading()">
+    <section class="policies-summary panel">
+      <article class="policies-kpi">
+        <span class="policies-kpi__accent"></span>
+        <div>
+          <strong>{{ policies().length }}</strong>
+          <span>Total</span>
+        </div>
+      </article>
+      <article class="policies-kpi policies-kpi--warning">
+        <span class="policies-kpi__accent"></span>
+        <div>
+          <strong>{{ draftCount() }}</strong>
+          <span>Borradores</span>
+        </div>
+      </article>
+      <article class="policies-kpi policies-kpi--success">
+        <span class="policies-kpi__accent"></span>
+        <div>
+          <strong>{{ publishedCount() }}</strong>
+          <span>Publicadas</span>
+        </div>
+      </article>
+      <article class="policies-kpi policies-kpi--info">
+        <span class="policies-kpi__accent"></span>
+        <div>
+          <strong>{{ categories().length }}</strong>
+          <span>Categorías</span>
+        </div>
+      </article>
+      <article class="policies-kpi">
+        <span class="policies-kpi__accent"></span>
+        <div>
+          <strong>{{ collaboratorTotal() }}</strong>
+          <span>Colaboradores</span>
+        </div>
+      </article>
+    </section>
+
+    <div class="policies-charts" *ngIf="policies().length">
+      <article class="policies-chart-card panel">
+        <header>
+          <h3>Estado de políticas</h3>
+        </header>
+        <app-dashboard-donut-chart [points]="statusChartPoints()" />
+      </article>
+
+      <article class="policies-chart-card panel">
+        <header>
+          <h3>Políticas por categoría</h3>
+        </header>
+        <app-dashboard-bar-chart [points]="categoryChartPoints()" />
+      </article>
+    </div>
+  </ng-container>
+
+  <div class="panel list-panel policies-panel" *ngIf="activeSection() === 'catalog'">
+    <div class="policies-catalog-bar">
+      <div class="policies-catalog-bar__filters" [formGroup]="filtersForm">
+        <label class="filter-field search-field">
+          <input [value]="searchTerm()" (input)="setSearchTerm($any($event.target).value)" placeholder="Buscar política..." />
+        </label>
+
+        <div class="creator-autocomplete creator-autocomplete--compact" (click)="$event.stopPropagation()">
+          <div class="creator-selected" *ngIf="selectedCreator() as creator; else creatorSearch">
+            <span>{{ creator.label }}</span>
+            <button type="button" class="creator-clear" (click)="clearCreatorFilter($event)" aria-label="Quitar filtro de creador">×</button>
+          </div>
+
+          <ng-template #creatorSearch>
+            <input
+              [value]="creatorQuery()"
+              (input)="onCreatorQueryInput($any($event.target).value)"
+              (focus)="openCreatorDropdown($event)"
+              placeholder="Creado por"
+              autocomplete="off"
+            />
+
+            <ul class="creator-suggestions" *ngIf="creatorDropdownOpen() && creatorSuggestions().length">
+              <li *ngFor="let suggestion of creatorSuggestions()">
+                <button type="button" (mousedown)="selectCreator(suggestion, $event)">
+                  <strong>{{ suggestion.label }}</strong>
+                  <span *ngIf="suggestion.email">{{ suggestion.email }}</span>
+                </button>
+              </li>
+            </ul>
+
+            <p class="creator-empty" *ngIf="creatorDropdownOpen() && creatorQuery().trim() && !creatorSuggestions().length">
+              Sin coincidencias.
+            </p>
+          </ng-template>
+        </div>
+
+        <app-custom-select
+          formControlName="category"
+          [options]="categoryFilterOptions()"
+          ariaLabel="Filtrar por categoría"
+        />
+
+        <button type="button" class="ghost clear-button" (click)="clearFilters()">Limpiar</button>
+      </div>
+
+      <div class="policies-catalog-bar__meta">
+        <span>{{ pageRangeLabel() }}</span>
+        <label class="policies-page-size">
+          <span>Por página</span>
+          <select [value]="pageSize()" (change)="setPageSize(+$any($event.target).value)">
+            <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <p class="policies-loading" *ngIf="loading()">Cargando políticas...</p>
+    <p class="error" *ngIf="error() && !modalOpen()">{{ error() }}</p>
+
+    <div class="policies-grid" *ngIf="!loading()">
+      <article class="policy-card policy-card--compact" *ngFor="let policy of paginatedPolicies()" [class]="statusClass(policy.status)">
+        <div class="policy-card__stripe" aria-hidden="true"></div>
+
+        <header class="policy-card__head">
+          <div class="policy-card__title">
+            <span class="policy-card__category">{{ policy.category }}</span>
+            <h4>{{ policy.name }}</h4>
+            <p>{{ policy.description }}</p>
+          </div>
+          <span class="policy-status" [class]="statusClass(policy.status)">{{ statusLabel(policy.status) }}</span>
+        </header>
+
+        <div class="policy-card__meta">
+          <div>
+            <span>Creado por</span>
+            <strong>{{ policy.created_by_name }}</strong>
+          </div>
+          <div>
+            <span>UML</span>
+            <strong>{{ policy.diagram.notation }} {{ policy.diagram.uml_version }}</strong>
+          </div>
+          <div>
+            <span>Colaboradores</span>
+            <strong>{{ collaboratorCount(policy) }}</strong>
+          </div>
+          <div>
+            <span>Actualizado</span>
+            <strong>{{ formatUpdatedAt(policy.updated_at) }}</strong>
+          </div>
+        </div>
+
+        <footer class="policy-card__actions">
+          <button type="button" class="policy-card__primary" (click)="openEditor(policy)">Abrir editor</button>
+          <button type="button" class="secondary" *ngIf="canSharePolicy(policy)" (click)="openShareModal(policy, $event)">Compartir</button>
+        </footer>
+      </article>
+
+      <article class="empty-policy-state" *ngIf="!filteredPolicies().length">
+        <strong>No hay políticas para mostrar.</strong>
+        <small *ngIf="selectedCreator() || searchTerm() || selectedCategory() !== 'all'; else defaultEmptyHint">
+          Ajusta los filtros o limpia la búsqueda.
+        </small>
+        <ng-template #defaultEmptyHint>
+          <small>Crea un borrador para abrir el editor UML 2.5.</small>
+        </ng-template>
+        <button type="button" class="secondary" *ngIf="selectedCreator() || searchTerm() || selectedCategory() !== 'all'" (click)="clearFilters()">
+          Limpiar filtros
+        </button>
+      </article>
+    </div>
+
+    <nav class="policies-pagination" *ngIf="!loading() && filteredPolicies().length > pageSize()" aria-label="Paginación de políticas">
+      <button type="button" class="ghost" (click)="previousPage()" [disabled]="currentPage() === 1">Anterior</button>
+      <div class="policies-pagination__pages">
+        <button
+          type="button"
+          class="policies-pagination__page"
+          *ngFor="let page of visiblePages()"
+          [class.is-active]="page === currentPage()"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+      <button type="button" class="ghost" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Siguiente</button>
+    </nav>
+  </div>
+
+  @if (shareModalPolicy(); as sharePolicy) {
+    <app-policy-collaborators-modal
+      [policyId]="sharePolicy.id"
+      [userId]="currentUserId()"
+      [collaborators]="shareCollaborators()"
+      (closed)="closeShareModal()"
+      (collaboratorsAdded)="onCollaboratorsUpdated($event)"
+    />
+  }
+
+  <div class="modal-backdrop" *ngIf="modalOpen()" (click)="closeModal()">
+    <div class="entity-modal" role="dialog" aria-modal="true" aria-labelledby="policy-modal-title" (click)="$event.stopPropagation()">
+      <form class="entity-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+        <header class="entity-modal__header">
+          <div class="entity-modal__heading">
+            <span class="entity-modal__eyebrow">Nuevo borrador</span>
+            <h3 id="policy-modal-title">Crear política desde diagrama</h3>
+            <p class="entity-modal__subtitle">
+              Define los datos iniciales. Se generará un borrador con diagrama UML 2.5 listo para editar.
+            </p>
+          </div>
+          <button type="button" class="entity-modal__close" aria-label="Cerrar" (click)="closeModal()">×</button>
+        </header>
+
+        <div class="entity-modal__body">
+          <div class="entity-modal__grid">
+            <label class="entity-modal__field">
+              <span>Nombre</span>
+              <input formControlName="name" placeholder="Ej. Proceso de compras" />
+            </label>
+
+            <label class="entity-modal__field">
+              <span>Categoría</span>
+              <input formControlName="category" placeholder="Atención ciudadana, RRHH, Compras..." />
+            </label>
+
+            <label class="entity-modal__field entity-modal__field--wide">
+              <span>Descripción</span>
+              <textarea rows="4" formControlName="description" placeholder="Describe el objetivo de la política"></textarea>
+            </label>
+          </div>
+
+          <div class="entity-modal__divider"><span>o genera con IA</span></div>
+
+          <div class="ai-policy-gen">
+            <label class="entity-modal__field entity-modal__field--wide">
+              <span>Describe tu proceso de negocio</span>
+              <textarea rows="3" [ngModel]="aiPrompt()" (ngModelChange)="aiPrompt.set($event)" placeholder="Ej. Necesito un proceso de compras donde el solicitante registra el requerimiento, el jefe de área aprueba, si el monto supera los $5,000 pasa a gerencia general, luego compras cotiza, emite orden de compra y recibe el producto." [ngModelOptions]="{ standalone: true }"></textarea>
+            </label>
+            <div class="ai-policy-gen__actions">
+              <button type="button" class="entity-modal__btn entity-modal__btn--primary" (click)="generateWithAi()" [disabled]="aiGenerating() || aiAudioLoading() || !aiPrompt().trim()">
+                {{ aiGenerating() ? 'Generando...' : 'Generar con IA' }}
+              </button>
+              <button type="button" class="entity-modal__btn entity-modal__btn--secondary" (click)="toggleAiRecording()" [disabled]="aiAudioLoading()">
+                {{ aiRecording() ? 'Detener audio' : (aiAudioLoading() ? 'Transcribiendo...' : 'Dictar proceso') }}
+              </button>
+            </div>
+            <div class="ai-policy-gen__status" *ngIf="aiRecording() || aiTranscribedText()">
+              <span class="ai-dot" [class.is-recording]="aiRecording()"></span>
+              <strong>{{ aiRecording() ? 'Grabando descripción del proceso...' : 'Audio transcrito' }}</strong>
+              <p *ngIf="aiTranscribedText()">{{ aiTranscribedText() }}</p>
+              <small *ngIf="aiTranscribedText()">Se generó la política. Podés editarla en el editor.</small>
+            </div>
+            <div class="ai-policy-gen__hints">
+              <strong>La IA generará:</strong>
+              <ul>
+                <li>Diagrama de actividades UML 2.5 con calles</li>
+                <li>Nodos: inicio, actividades, decisiones, fork/join, final</li>
+                <li>Carriles (swimlanes) por departamento</li>
+                <li>Formularios con campos contextuales por actividad</li>
+                <li>Categoría y nombre inferidos del prompt</li>
+              </ul>
+              <small>El resultado se abre como borrador listo para editar.</small>
+            </div>
+          </div>
+
+          <p class="entity-modal__hint">
+            Se creará un borrador con diagrama de actividades UML 2.5 listo para trabajar calles y actividades.
+          </p>
+        </div>
+
+        <p class="entity-modal__error" *ngIf="error()">{{ error() }}</p>
+
+        <footer class="entity-modal__footer">
+          <button type="button" class="entity-modal__btn entity-modal__btn--secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="entity-modal__btn entity-modal__btn--primary" [disabled]="!canWrite() || saving()">
+            {{ saving() ? 'Creando...' : 'Crear borrador' }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</section>

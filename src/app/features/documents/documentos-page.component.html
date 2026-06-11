@@ -1,0 +1,199 @@
+<section class="page documentos-page">
+  <header class="documentos-header">
+    <div class="documentos-header__copy">
+      <span class="eyebrow">Gestión documental</span>
+      <h1>Documentos</h1>
+      <p>Vista global de documentos de la empresa. Filtrá por trámite, cliente, categoría o tipo de archivo.</p>
+    </div>
+    <div class="documentos-header__actions">
+      <button type="button" class="documentos-btn documentos-btn--ghost" (click)="reload()" [disabled]="loading()">
+        {{ loading() ? 'Cargando…' : 'Recargar' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <span>Total</span>
+      <strong>{{ documents().length }}</strong>
+      <small>documentos visibles</small>
+    </article>
+    <article class="stat-card accent-green">
+      <span>Trámites activos</span>
+      <strong>{{ activeTramiteCount() }}</strong>
+      <small>con estado en curso</small>
+    </article>
+    <article class="stat-card accent-amber">
+      <span>Tipos distintos</span>
+      <strong>{{ distinctTypeCount() }}</strong>
+      <small>formatos en el listado</small>
+    </article>
+  </section>
+
+  <article class="panel list-panel documentos-panel">
+    <div class="documentos-toolbar">
+      <div class="documentos-toolbar__title">
+        <h3>Filtros de búsqueda</h3>
+        <p>{{ documents().length }} resultado(s) con los criterios actuales</p>
+      </div>
+
+      <div class="documentos-filters">
+        <label class="documentos-field documentos-field--search">
+          <span>Buscar</span>
+          <input
+            type="search"
+            placeholder="Nombre, trámite, cliente…"
+            [ngModel]="q()"
+            (ngModelChange)="onSearch($event)"
+            autocomplete="off"
+          />
+        </label>
+
+        <label class="documentos-field">
+          <span>Desde</span>
+          <input type="date" [ngModel]="dateFrom()" (ngModelChange)="dateFrom.set($event); loadDocuments()" />
+        </label>
+
+        <label class="documentos-field">
+          <span>Hasta</span>
+          <input type="date" [ngModel]="dateTo()" (ngModelChange)="dateTo.set($event); loadDocuments()" />
+        </label>
+
+        <label class="documentos-field">
+          <span>Estado trámite</span>
+          <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); loadDocuments()">
+            <option value="">Todos</option>
+            <option value="active">Activo</option>
+            <option value="completed">Completado</option>
+            <option value="blocked">Bloqueado</option>
+          </select>
+        </label>
+
+        <label class="documentos-field">
+          <span>Categoría</span>
+          <select [ngModel]="categoryFilter()" (ngModelChange)="categoryFilter.set($event); loadDocuments()">
+            <option value="">Todas</option>
+            <option value="Solicitud">Solicitud</option>
+            <option value="Informes Internos">Informes Internos</option>
+            <option value="Legal">Legal</option>
+            <option value="Financiero">Financiero</option>
+            <option value="Soporte">Soporte</option>
+          </select>
+        </label>
+
+        <label class="documentos-field">
+          <span>Alcance</span>
+          <select [ngModel]="scopeFilter()" (ngModelChange)="scopeFilter.set($event); loadDocuments()">
+            <option value="">Todos</option>
+            <option value="case">Trámite</option>
+            <option value="task">Actividad</option>
+          </select>
+        </label>
+
+        <label class="documentos-field">
+          <span>Tipo</span>
+          <select [ngModel]="mimeFilter()" (ngModelChange)="mimeFilter.set($event); loadDocuments()">
+            <option value="">Todos</option>
+            <option value="pdf">PDF</option>
+            <option value="word">Word</option>
+            <option value="excel">Excel</option>
+            <option value="imagen">Imagen</option>
+          </select>
+        </label>
+
+        <div class="documentos-filters__actions">
+          <button
+            type="button"
+            class="documentos-btn documentos-btn--ghost"
+            *ngIf="hasActiveFilters()"
+            (click)="clearFilters()"
+            [disabled]="loading()"
+          >
+            Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <p class="documentos-loading muted" *ngIf="loading()">Cargando documentos…</p>
+
+    <div class="table-wrapper documentos-table-wrap" *ngIf="!loading() && documents().length; else emptyState">
+      <table class="documentos-table">
+        <thead>
+          <tr>
+            <th>Documento</th>
+            <th>Trámite</th>
+            <th>Cliente</th>
+            <th>Categoría</th>
+            <th>Versión</th>
+            <th>Subido por</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Departamento</th>
+            <th>Tipo</th>
+            <th class="documentos-table__actions-head">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (doc of documents(); track doc.id) {
+            <tr>
+              <td class="documentos-table__name">
+                <strong>{{ doc.name }}</strong>
+                <small>{{ doc.file_name }}</small>
+              </td>
+              <td>
+                <span class="documentos-code">{{ doc.case_code || '—' }}</span>
+              </td>
+              <td>
+                <span class="documentos-client">{{ doc.requester_name || '—' }}</span>
+                <small *ngIf="doc.requester_email">{{ doc.requester_email }}</small>
+              </td>
+              <td>
+                <span class="documentos-badge documentos-badge--category">{{ doc.category }}</span>
+              </td>
+              <td>
+                <span class="documentos-version">v{{ doc.current_version }}</span>
+              </td>
+              <td>{{ doc.uploaded_by_name || doc.created_by_name }}</td>
+              <td class="documentos-date">{{ formatDate(doc.uploaded_at || doc.created_at) }}</td>
+              <td>
+                <span class="documentos-badge" [ngClass]="statusClass(doc.instance_status)">
+                  {{ statusLabel(doc.instance_status) }}
+                </span>
+              </td>
+              <td>{{ doc.department_name || '—' }}</td>
+              <td>
+                <span class="documentos-type" [ngClass]="'documentos-type--' + fileKind(doc)">
+                  {{ fileTypeLabel(doc) }}
+                </span>
+              </td>
+              <td class="documentos-table__actions">
+                <button type="button" class="documentos-btn documentos-btn--ghost documentos-btn--sm" (click)="openDocument(doc)">
+                  Ver
+                </button>
+                <button type="button" class="documentos-btn documentos-btn--ghost documentos-btn--sm" (click)="openEditor(doc)">
+                  Editar
+                </button>
+                @if (canSign()) {
+                  <button type="button" class="documentos-btn documentos-btn--sign documentos-btn--sm" (click)="signDocument(doc)">
+                    Firmar
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="documentos-empty" *ngIf="!loading()">
+        <strong>Sin resultados</strong>
+        <p>No se encontraron documentos con los filtros seleccionados.</p>
+        <button type="button" class="documentos-btn documentos-btn--ghost" *ngIf="hasActiveFilters()" (click)="clearFilters()">
+          Limpiar filtros
+        </button>
+      </div>
+    </ng-template>
+  </article>
+</section>

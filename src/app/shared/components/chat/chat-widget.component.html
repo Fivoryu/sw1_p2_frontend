@@ -1,0 +1,63 @@
+<button type="button" class="chat-fab" (click)="toggle()" [class.has-unread]="unreadCount() > 0">
+  <span class="chat-fab-icon">{{ open() ? '✕' : '💬' }}</span>
+  <span class="chat-badge" *ngIf="!open() && unreadCount()">{{ unreadCount() }}</span>
+</button>
+
+<div class="chat-panel" *ngIf="open()">
+  <header class="chat-panel__header">
+    <strong>{{ headerTitle() }}</strong>
+    <div class="chat-panel__actions">
+      <button type="button" class="ghost" *ngIf="view() === 'chat'" (click)="goToList()">←</button>
+      <button type="button" class="ghost" (click)="toggle()">✕</button>
+    </div>
+  </header>
+
+  <div class="chat-conversations" *ngIf="view() === 'list'">
+    <div class="chat-search">
+      <input [(ngModel)]="searchQuery" placeholder="Buscar usuario..." (keyup.enter)="search()" />
+      <button type="button" (click)="search()">Buscar</button>
+    </div>
+    <div class="chat-search-results" *ngIf="searchResults().length">
+      <div *ngFor="let user of searchResults()" class="chat-search-item" (click)="startDirectChat(user)">
+        <strong>{{ user.full_name }}</strong>
+        <small>{{ user.role_name }} · {{ user.department_name || 'Sin depto' }}</small>
+      </div>
+    </div>
+    <div class="chat-conv-list" *ngIf="conversations().length">
+      <div
+        *ngFor="let conv of conversations()"
+        class="chat-conv-item"
+        [class.chat-conv-item--active]="activeConversation()?.id === conv.id"
+        (click)="openConversation(conv)"
+      >
+        <span class="chat-conv-avatar">{{ convAvatar(conv) }}</span>
+        <div class="chat-conv-info">
+          <strong>{{ convTitle(conv) }}</strong>
+          <p>{{ conv.last_message_text || 'Sin mensajes' }}</p>
+        </div>
+        <small *ngIf="conv.last_message_at">{{ conv.last_message_at | date:'shortTime' }}</small>
+      </div>
+    </div>
+    <div class="empty-state" *ngIf="!conversations().length && !searchResults().length">
+      <p>Busca un usuario para empezar un chat.</p>
+    </div>
+  </div>
+
+  <div class="chat-messages" *ngIf="view() === 'chat' && activeConversation()">
+    <div class="chat-messages__list">
+      <div
+        *ngFor="let msg of messages()"
+        class="chat-bubble"
+        [class.chat-bubble--own]="isOwnMessage(msg)"
+      >
+        <span class="chat-bubble__sender" *ngIf="activeConversation()?.type === 'group' && !isOwnMessage(msg)">{{ msg.sender_name }}</span>
+        <span class="chat-bubble__text">{{ msg.text }}</span>
+        <small class="chat-bubble__time">{{ msg.created_at | date:'shortTime' }}</small>
+      </div>
+    </div>
+    <form class="chat-input" (submit)="send(); $event.preventDefault()">
+      <input [(ngModel)]="draft" name="draft" placeholder="Escribe un mensaje..." autocomplete="off" />
+      <button type="submit" [disabled]="!draft().trim()">Enviar</button>
+    </form>
+  </div>
+</div>

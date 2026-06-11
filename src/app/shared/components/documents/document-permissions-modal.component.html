@@ -1,0 +1,64 @@
+<div class="modal-backdrop permission-backdrop" (click)="closeModal()">
+  <section class="permission-modal" role="dialog" aria-modal="true" aria-labelledby="permission-title" (click)="$event.stopPropagation()">
+    <header class="permission-modal__header">
+      <div>
+        <span class="permission-modal__eyebrow">Permisos documentales</span>
+        <h3 id="permission-title">{{ documentName() || 'Documento' }}</h3>
+      </div>
+      <button type="button" class="entity-modal__close" aria-label="Cerrar permisos" (click)="closeModal()">×</button>
+    </header>
+
+    <div class="permission-modal__body">
+      <p class="permission-error" *ngIf="error()">{{ error() }}</p>
+
+      <form class="permission-form" (ngSubmit)="submit()">
+        <label>
+          Tipo
+          <select [ngModel]="granteeType()" (ngModelChange)="setGranteeType($event)" name="granteeType">
+            <option value="user">Usuario</option>
+            <option value="role">Rol</option>
+            <option value="department">Departamento</option>
+          </select>
+        </label>
+        <label>
+          Destinatario
+          <select [ngModel]="granteeId()" (ngModelChange)="granteeId.set($event)" name="granteeId">
+            <option *ngFor="let option of granteeOptions()" [value]="option.id">{{ option.label }}</option>
+          </select>
+        </label>
+        <div class="permission-checks">
+          <label *ngFor="let option of permissionOptions">
+            <input type="checkbox" [checked]="hasSelectedPermission(option.value)" (change)="togglePermission(option.value, $any($event.target).checked)" />
+            {{ option.label }}
+          </label>
+        </div>
+        <button type="submit" [disabled]="saving() || !granteeId() || !selectedPermissions().length">
+          {{ saving() ? 'Guardando...' : 'Asignar permiso' }}
+        </button>
+      </form>
+
+      <section class="permission-list">
+        <header>
+          <strong>Permisos activos</strong>
+          <span>{{ permissions().length }} registro(s)</span>
+        </header>
+
+        <div class="permission-empty" *ngIf="!loading() && !permissions().length">
+          Sin permisos granulares. Aplica acceso por rol y workflow.
+        </div>
+
+        <article class="permission-item" *ngFor="let permission of permissions()">
+          <div>
+            <strong>{{ permission.grantee_name }}</strong>
+            <span>{{ permission.grantee_type }}</span>
+            <small>Otorgado por {{ permission.granted_by_name }}</small>
+          </div>
+          <div class="permission-badges">
+            <span *ngFor="let value of permission.permissions">{{ value }}</span>
+          </div>
+          <button type="button" class="ghost" (click)="revoke(permission.id)">Revocar</button>
+        </article>
+      </section>
+    </div>
+  </section>
+</div>

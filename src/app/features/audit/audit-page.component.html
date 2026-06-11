@@ -1,0 +1,173 @@
+<section class="page audit-page">
+  <header class="audit-header">
+    <div class="audit-header__copy">
+      <span class="eyebrow">HU 4.3</span>
+      <h1>Auditoría transversal</h1>
+      <p>Consulta eventos de trazabilidad por usuario, acción y recurso.</p>
+    </div>
+  </header>
+
+  <div class="panel list-panel audit-panel">
+    <div class="audit-toolbar">
+      <div class="audit-toolbar__title">
+        <h3>Filtros de búsqueda</h3>
+        <p>{{ total() }} evento(s) en total</p>
+      </div>
+
+      <div class="audit-filters" (keydown.enter)="applyFilters()">
+        <label class="audit-field">
+          <span>Usuario</span>
+          <input
+            [ngModel]="userEmail()"
+            (ngModelChange)="userEmail.set($event)"
+            placeholder="usuario@example.com"
+            autocomplete="off"
+          />
+        </label>
+        <label class="audit-field">
+          <span>Acción</span>
+          <input
+            [ngModel]="action()"
+            (ngModelChange)="action.set($event)"
+            placeholder="ai_generate_report"
+            autocomplete="off"
+          />
+        </label>
+        <label class="audit-field">
+          <span>Recurso</span>
+          <input
+            [ngModel]="resource()"
+            (ngModelChange)="resource.set($event)"
+            placeholder="ai / workflow / documents"
+            autocomplete="off"
+          />
+        </label>
+        <label class="audit-field">
+          <span>Desde</span>
+          <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" />
+        </label>
+        <label class="audit-field">
+          <span>Hasta</span>
+          <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" />
+        </label>
+        <div class="audit-filters__actions">
+          <button type="button" class="audit-btn audit-btn--primary" (click)="applyFilters()" [disabled]="loading()">
+            Filtrar
+          </button>
+          <button type="button" class="audit-btn audit-btn--ghost" (click)="clearFilters()" [disabled]="loading()">
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <div class="audit-meta">
+        <p class="muted">{{ pageRangeLabel() }}</p>
+        <label class="audit-page-size">
+          <span>Por página</span>
+          <select [value]="pageSize()" (change)="setPageSize(+$any($event.target).value)" [disabled]="loading()">
+            <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <p class="error" *ngIf="error()">{{ error() }}</p>
+    <p class="audit-loading muted" *ngIf="loading()">Cargando eventos…</p>
+
+    <div class="table-wrapper audit-table-wrapper" *ngIf="!loading() && items().length; else emptyAudit">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Usuario</th>
+            <th>Acción</th>
+            <th>Recurso</th>
+            <th>Detalles</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items(); trackBy: trackById">
+            <td class="audit-date">{{ item.created_at | date: 'M/d/yy, h:mm a' }}</td>
+            <td>
+              <div class="audit-user">
+                <strong>{{ item.user_email || 'Sistema' }}</strong>
+                <small *ngIf="item.ip_address">IP {{ item.ip_address }}</small>
+              </div>
+            </td>
+            <td>
+              <span class="audit-badge audit-badge--action">{{ badgeLabel(item.action) }}</span>
+            </td>
+            <td>
+              <span class="audit-badge audit-badge--resource">{{ badgeLabel(item.resource) }}</span>
+            </td>
+            <td>
+              <button type="button" class="audit-json-link" (click)="openDetails(item)">Ver JSON</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #emptyAudit>
+      <div class="audit-empty" *ngIf="!loading()">
+        <strong>No hay eventos para mostrar.</strong>
+        <small *ngIf="hasActiveFilters(); else defaultEmptyHint">
+          Ajusta los filtros o limpia la búsqueda para ver más resultados.
+        </small>
+        <ng-template #defaultEmptyHint>
+          <small>Aún no se registran eventos de trazabilidad en el sistema.</small>
+        </ng-template>
+        <button type="button" class="audit-btn audit-btn--ghost" *ngIf="hasActiveFilters()" (click)="clearFilters()">
+          Limpiar filtros
+        </button>
+      </div>
+    </ng-template>
+
+    <nav class="audit-pagination" *ngIf="!loading() && total() > pageSize()" aria-label="Paginación de auditoría">
+      <button type="button" class="audit-btn audit-btn--ghost" (click)="previousPage()" [disabled]="currentPage() === 1">
+        Anterior
+      </button>
+      <div class="audit-pagination__pages">
+        <button
+          type="button"
+          class="audit-pagination__page"
+          *ngFor="let page of visiblePages()"
+          [class.is-active]="page === currentPage()"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+      <button type="button" class="audit-btn audit-btn--ghost" (click)="nextPage()" [disabled]="currentPage() === totalPages()">
+        Siguiente
+      </button>
+    </nav>
+  </div>
+</section>
+
+<div class="audit-modal-backdrop" *ngIf="detailsModalItem() as item" (click)="closeDetails()">
+  <div
+    class="audit-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="audit-details-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="audit-modal__header">
+      <div>
+        <span class="eyebrow">Detalle del evento</span>
+        <h3 id="audit-details-title">{{ badgeLabel(item.action) }}</h3>
+        <p class="muted">{{ item.user_email || 'Sistema' }} · {{ item.created_at | date: 'short' }}</p>
+      </div>
+      <button type="button" class="audit-modal__close" aria-label="Cerrar" (click)="closeDetails()">×</button>
+    </header>
+    <div class="audit-modal__meta">
+      <span class="audit-badge audit-badge--resource">{{ badgeLabel(item.resource) }}</span>
+      <span class="audit-modal__id muted">ID {{ item.id }}</span>
+    </div>
+    <pre class="audit-modal__json"><code>{{ stringifyDetails(item.details) }}</code></pre>
+    <footer class="audit-modal__footer">
+      <button type="button" class="audit-btn audit-btn--ghost" (click)="closeDetails()">Cerrar</button>
+    </footer>
+  </div>
+</div>
