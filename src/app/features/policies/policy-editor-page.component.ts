@@ -28,6 +28,7 @@ import {
 } from '../../core/models/policy-form-field.config';
 import { AdminService } from '../../core/services/admin.service';
 import { configureMaxGraphAssets } from '../../core/config/maxgraph.config';
+import { generateUUID } from '../../shared/utils/uuid.utils';
 import { AuthService } from '../../core/services/auth.service';
 import { EditorEvent, PolicyEditorCollaborationService } from '../../core/services/policy-editor-collaboration.service';
 import { PolicyCollaboratorsModalComponent } from './policy-collaborators-modal.component';
@@ -512,7 +513,7 @@ export class PolicyEditorPageComponent implements OnDestroy {
     }
 
     const lane: PolicyLane = {
-      id: `lane-${crypto.randomUUID()}`,
+      id: `lane-${generateUUID()}`,
       department_id: department.id,
       department_name: department.name,
     };
@@ -631,7 +632,7 @@ export class PolicyEditorPageComponent implements OnDestroy {
     const laneIndex = this.lanes().findIndex((lane) => lane.id === this.selectedLaneId);
     const laneTop = laneIndex >= 0 ? this.laneY(laneIndex) : 24;
     const node: PolicyNode = {
-      id: `node-${crypto.randomUUID()}`,
+      id: `node-${generateUUID()}`,
       type,
       label: this.nodeLabel.trim(),
       lane_id: this.requiresLane(type) ? this.selectedLaneId || null : null,
@@ -660,7 +661,7 @@ export class PolicyEditorPageComponent implements OnDestroy {
     }
 
     const edge: PolicyEdge = {
-      id: `edge-${crypto.randomUUID()}`,
+      id: `edge-${generateUUID()}`,
       source_id: this.edgeSourceId,
       target_id: this.edgeTargetId,
       label: this.edgeLabel.trim(),
@@ -1233,7 +1234,7 @@ export class PolicyEditorPageComponent implements OnDestroy {
 
     const idMap = new Map<string, string>();
     const clonedNodes = this.clipboard.nodes.map((node) => {
-      const newId = `node-${crypto.randomUUID()}`;
+      const newId = `node-${generateUUID()}`;
       idMap.set(node.id, newId);
       return {
         ...structuredClone(node),
@@ -1247,7 +1248,7 @@ export class PolicyEditorPageComponent implements OnDestroy {
       .filter((edge) => idMap.has(edge.source_id) && idMap.has(edge.target_id))
       .map((edge) => ({
         ...structuredClone(edge),
-        id: `edge-${crypto.randomUUID()}`,
+        id: `edge-${generateUUID()}`,
         source_id: idMap.get(edge.source_id)!,
         target_id: idMap.get(edge.target_id)!,
       }));
@@ -1468,7 +1469,7 @@ export class PolicyEditorPageComponent implements OnDestroy {
     if (target.kind === 'node') {
       const copy: PolicyNode = {
         ...structuredClone(target.item),
-        id: `node-${crypto.randomUUID()}`,
+        id: `node-${generateUUID()}`,
         x: target.item.x + 40,
         y: target.item.y + 40,
       };
@@ -1479,7 +1480,7 @@ export class PolicyEditorPageComponent implements OnDestroy {
     if (target.kind === 'edge') {
       const copy: PolicyEdge = {
         ...structuredClone(target.item),
-        id: `edge-${crypto.randomUUID()}`,
+        id: `edge-${generateUUID()}`,
       };
       this.edges.set([...this.edges(), copy]);
       this.selectCells([copy.id]);
@@ -2288,7 +2289,7 @@ export class PolicyEditorPageComponent implements OnDestroy {
 
     const insertIndex = this.resolveLaneInsertIndex(clickY);
     const lane: PolicyLane = {
-      id: `lane-${crypto.randomUUID()}`,
+      id: `lane-${generateUUID()}`,
       department_id: department.id,
       department_name: department.name,
     };
@@ -2318,7 +2319,7 @@ export class PolicyEditorPageComponent implements OnDestroy {
     const y = clickY - height / 2;
 
     const node: PolicyNode = {
-      id: `node-${crypto.randomUUID()}`,
+      id: `node-${generateUUID()}`,
       type,
       label: this.nodeLabel.trim(),
       lane_id: this.requiresLane(type) ? laneId : null,
@@ -2368,7 +2369,7 @@ export class PolicyEditorPageComponent implements OnDestroy {
     }
 
     const edge: PolicyEdge = {
-      id: `edge-${crypto.randomUUID()}`,
+      id: `edge-${generateUUID()}`,
       source_id: sourceId,
       target_id: targetId,
       label: this.edgeLabel.trim(),

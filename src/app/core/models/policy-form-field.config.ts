@@ -1,5 +1,6 @@
 import { PolicyFormField, PolicyFormFieldType, PolicyFormFieldValidation } from './policy.models';
 import { WorkflowTaskForm, WorkflowTaskFormField } from './workflow.models';
+import { generateUUID } from '../../shared/utils/uuid.utils';
 
 export interface PolicyFormFieldTypeOption {
   value: PolicyFormFieldType;
@@ -72,7 +73,7 @@ export function createEmptyFieldValidation(): PolicyFormFieldValidation {
 
 export function createEmptyPolicyFormField(type: PolicyFormFieldType = 'text'): PolicyFormField {
   return {
-    id: `field-${crypto.randomUUID()}`,
+    id: `field-${generateUUID()}`,
     name: '',
     label: '',
     type,
